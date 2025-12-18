@@ -1,0 +1,32 @@
+Python Syntax Enhanced Authors
+==============================
+
+This file lists authors for copyright attribution purposes.
+
+Maintainer:
+
+    Aaron Carlisle <https://github.com/aaronbcarlisle>
+
+Acknowledgments:
+
+This plugin was developed with inspiration and reference from:
+
+    Vim's built-in Python syntax file:
+        - Zvezdan Petkovic <zpetkovic@acm.org>
+        - Neil Schemenauer <nas@python.ca>
+        - Dmitry Vasiliev
+
+    vim-python/python-syntax project:
+        - Dmitry Vasiliev
+        - python-syntax contributors
+        - https://github.com/vim-python/python-syntax
+
+    Python Enhancement Proposals (PEPs) for typing:
+        - PEP 484 - Type Hints
+        - PEP 526 - Syntax for Variable Annotations
+        - PEP 544 - Protocols: Structural subtyping
+        - PEP 585 - Type Hinting Generics In Standard Collections
+        - PEP 604 - Allow writing union types as X | Y
+        - PEP 612 - Parameter Specification Variables
+        - PEP 673 - Self Type
+        - PEP 695 - Type Parameter Syntax
