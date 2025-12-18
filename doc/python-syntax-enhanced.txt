@@ -1,0 +1,224 @@
+*python-syntax-enhanced.txt*  IDE-level Python syntax highlighting
+
+                    PYTHON SYNTAX ENHANCED
+                    =====================
+
+Author:  Aaron Carlisle / ABC-Terminal
+License: MIT
+Version: 1.0.0
+
+==============================================================================
+CONTENTS                                    *python-syntax-enhanced-contents*
+
+    1. Introduction ................ |python-syntax-enhanced-intro|
+    2. Installation ................ |python-syntax-enhanced-install|
+    3. Configuration ............... |python-syntax-enhanced-config|
+    4. Type Annotations ............ |python-syntax-enhanced-types|
+    5. Highlight Groups ............ |python-syntax-enhanced-groups|
+    6. Commands .................... |python-syntax-enhanced-commands|
+    7. Troubleshooting ............. |python-syntax-enhanced-trouble|
+    8. Changelog ................... |python-syntax-enhanced-changelog|
+
+==============================================================================
+1. INTRODUCTION                              *python-syntax-enhanced-intro*
+
+Python Syntax Enhanced provides IDE-level syntax highlighting for Python,
+with particular focus on type annotations that are missing or broken in
+Vim's built-in syntax and other Python syntax plugins.
+
+Features:~
+    - Full type annotation support (PEP 484, 526, 544, 585, 604, 612, 673, 695)
+    - Return type arrows: `->` (no longer breaks highlighting!)
+    - Parameter type annotations: `param: Type`
+    - Generic types: `List[T]`, `Dict[K, V]`, `Tuple[int, ...]`
+    - Union types: `X | Y` (Python 3.10+)
+    - typing module types: Optional, Callable, TypeVar, Protocol, etc.
+    - Type comments: `# type: int`
+    - Python 3.12+ type parameter syntax: `def func[T](x: T) -> T:`
+    - Enhanced f-string support with debug specifier
+    - Modern match/case statements (Python 3.10+)
+    - Operator highlighting
+    - Function call detection
+    - Comprehensive builtin and exception coverage
+
+==============================================================================
+2. INSTALLATION                            *python-syntax-enhanced-install*
+
+Using vim-plug:~
+>
+    Plug 'abc-terminal/python-syntax-enhanced'
+<
+Or for local installation:~
+>
+    Plug '~/.vim/plugged/python-syntax-enhanced'
+<
+Using Vundle:~
+>
+    Plugin 'abc-terminal/python-syntax-enhanced'
+<
+Manual Installation:~
+
+Copy the plugin directory to `~/.vim/plugged/python-syntax-enhanced/` or
+`~/.vim/pack/plugins/start/python-syntax-enhanced/`.
+
+==============================================================================
+3. CONFIGURATION                            *python-syntax-enhanced-config*
+
+Add these to your vimrc BEFORE `syntax on`:
+
+Enable all features at once:~
+>
+    let g:python_enhanced_highlight_all = 1
+<
+Or configure individually:~
+>
+    let g:python_highlight_type_annotations = 1   " Type annotations (default: 1)
+    let g:python_highlight_operators = 1          " Operators (default: 1)
+    let g:python_highlight_func_calls = 1         " Function calls (default: 0)
+    let g:python_highlight_class_vars = 1         " self, cls (default: 1)
+    let g:python_highlight_builtins = 1           " Builtins (default: 1)
+    let g:python_highlight_exceptions = 1         " Exceptions (default: 1)
+    let g:python_highlight_string_formatting = 1  " String formatting (default: 1)
+    let g:python_highlight_doctests = 1           " Doctests (default: 1)
+    let g:python_highlight_space_errors = 0       " Space errors (default: 0)
+<
+For large files with complex nesting:~
+>
+    let g:python_slow_sync = 1                    " Better sync (slower)
+<
+
+==============================================================================
+4. TYPE ANNOTATIONS                          *python-syntax-enhanced-types*
+
+This plugin provides comprehensive type annotation highlighting:
+
+Return Type Annotations:~
+>
+    def greet(name: str) -> str:
+        return f"Hello, {name}"
+<
+The `->` is highlighted as an Operator, and `str` is highlighted as Type.
+
+Parameter Annotations:~
+>
+    def process(data: bytes, count: int = 10) -> None:
+        pass
+<
+Generic Types:~
+>
+    from typing import List, Dict, Optional
+
+    def get_users() -> List[Dict[str, Any]]:
+        return []
+
+    def find(id: int) -> Optional[User]:
+        return None
+<
+Union Types (Python 3.10+):~
+>
+    def parse(value: str | int | None) -> dict:
+        pass
+<
+Type Aliases (Python 3.12+):~
+>
+    type Point = tuple[int, int]
+    type Vector[T] = list[T]
+<
+TypeVar and Generics:~
+>
+    from typing import TypeVar, Generic
+
+    T = TypeVar('T')
+
+    class Stack(Generic[T]):
+        def push(self, item: T) -> None: ...
+        def pop(self) -> T: ...
+<
+Protocol Classes:~
+>
+    from typing import Protocol
+
+    class Comparable(Protocol):
+        def __lt__(self, other: Self) -> bool: ...
+<
+
+==============================================================================
+5. HIGHLIGHT GROUPS                          *python-syntax-enhanced-groups*
+
+Type Annotation Groups:~
+
+    pythonReturnArrow       The `->` symbol
+    pythonTypingType        typing module types (Optional, Callable, etc.)
+    pythonTypingContainer   Container types (List, Dict, Set, etc.)
+    pythonTypePrimitive     Primitive types (int, str, bool, etc.)
+    pythonTypeUnion         Union operator `|`
+    pythonTypeBracket       Generic brackets `[`, `]`
+    pythonTypeComment       Type comments `# type: ...`
+    pythonTypeVar           Type variables in type parameter lists
+    pythonTypeAnnotation    The full type annotation
+
+Core Groups:~
+
+    pythonStatement         Keywords (def, class, return, etc.)
+    pythonFunction          Function names
+    pythonClass             Class names
+    pythonDecorator         Decorator @ symbol
+    pythonDecoratorName     Full decorator name
+    pythonComment           Comments
+    pythonString            String literals
+    pythonNumber            Numeric literals
+    pythonBuiltin           Built-in functions
+    pythonExceptions        Exception classes
+    pythonOperatorSymbol    Operators (+, -, *, etc.)
+
+Customizing Colors:~
+
+Add to your vimrc after colorscheme:
+>
+    " Make type annotations stand out
+    hi pythonTypingType     ctermfg=Cyan guifg=#56B6C2
+    hi pythonTypingContainer ctermfg=Cyan guifg=#56B6C2
+    hi pythonTypePrimitive  ctermfg=Yellow guifg=#E5C07B
+    hi pythonReturnArrow    ctermfg=Magenta guifg=#C678DD
+<
+
+==============================================================================
+6. COMMANDS                                *python-syntax-enhanced-commands*
+
+:PythonSyntaxEnableAll                      *:PythonSyntaxEnableAll*
+    Enable all highlighting features and reload syntax.
+
+:PythonSyntaxInfo                           *:PythonSyntaxInfo*
+    Show current configuration status.
+
+==============================================================================
+7. TROUBLESHOOTING                          *python-syntax-enhanced-trouble*
+
+Syntax breaks in long files:~
+    Add to vimrc: `let g:python_slow_sync = 1`
+    Or use `:syntax sync fromstart`
+
+Type annotations not highlighted:~
+    Ensure `let g:python_highlight_type_annotations = 1` is set BEFORE
+    `syntax on` in your vimrc.
+
+Conflicts with other plugins:~
+    This plugin replaces vim's built-in Python syntax. Disable any other
+    Python syntax plugins (like vim-python/python-syntax) to avoid conflicts.
+
+Manual syntax resync:~
+    If highlighting breaks mid-editing, use `:syntax sync fromstart` or
+    create a mapping: `nnoremap <leader>ss :syntax sync fromstart<CR>`
+
+==============================================================================
+8. CHANGELOG                              *python-syntax-enhanced-changelog*
+
+1.0.0 (2025-12-18)~
+    - Initial release
+    - Full type annotation support
+    - Modern Python 3.10+ features
+    - Enhanced f-string handling
+    - Operator highlighting
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
