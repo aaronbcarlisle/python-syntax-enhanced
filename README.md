@@ -1,2 +1,1 @@
-# ping-overlay
-Simple ping overlay for gaming.
+Python Syntax Enhanced
