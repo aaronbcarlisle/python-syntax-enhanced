@@ -4,6 +4,8 @@
 
 Vim's built-in Python syntax and existing plugins like `vim-python/python-syntax` don't properly handle modern Python type hints. The `->` return type arrow breaks highlighting, generic types aren't recognized, and typing module constructs are ignored. This plugin fixes all of that.
 
+![enhanced-syntax-highlighting-demo](https://github.com/user-attachments/assets/4295c9fb-e658-472e-978c-923091fbc221)
+
 ## Features
 
 - **Return type arrows** - `->` is properly highlighted (no more broken syntax!)
