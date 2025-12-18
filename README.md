@@ -163,11 +163,32 @@ nnoremap <leader>ss :syntax sync fromstart<CR>
 **Old syntax file interfering:**
 Check for old Python syntax files in `~/vimfiles/syntax/` or `~/.vim/syntax/` and remove them.
 
+## Testing
+
+A comprehensive test file is included to verify all syntax highlighting features:
+
+```
+tests/test_highlighting.py
+```
+
+Open this file in Vim after installing the plugin to see all highlighting in action. It covers:
+- Basic type annotations and return type arrows
+- Generic types and TypeVar usage
+- Protocol classes and structural subtyping
+- ClassVar, Final, and Literal types
+- TypeGuard and ParamSpec
+- Complex nested type annotations
+- Match/case statements (Python 3.10+)
+- F-strings with debug specifier
+- All typing module types
+
 ## License
 
-MIT
+[MIT](LICENSE)
 
 ## Credits
+
+See [AUTHORS](AUTHORS) for full attribution.
 
 - Vim's built-in Python syntax (Zvezdan Petkovic)
 - vim-python/python-syntax (for inspiration)
