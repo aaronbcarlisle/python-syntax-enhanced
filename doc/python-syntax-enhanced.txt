@@ -5,7 +5,7 @@
 
 Author:  Aaron Carlisle / ABC-Terminal
 License: MIT
-Version: 1.0.0
+Version: 1.1.0
 
 ==============================================================================
 CONTENTS                                    *python-syntax-enhanced-contents*
@@ -26,27 +26,31 @@ Python Syntax Enhanced provides IDE-level syntax highlighting for Python,
 with particular focus on type annotations that are missing or broken in
 Vim's built-in syntax and other Python syntax plugins.
 
+On |FileType| python the plugin clears syntax and sources its own
+syntax/python.vim by absolute path so stock runtime files cannot shadow it.
+
 Features:~
-    - Full type annotation support (PEP 484, 526, 544, 585, 604, 612, 673, 695)
-    - Return type arrows: `->` (no longer breaks highlighting!)
-    - Parameter type annotations: `param: Type`
-    - Generic types: `List[T]`, `Dict[K, V]`, `Tuple[int, ...]`
-    - Union types: `X | Y` (Python 3.10+)
-    - typing module types: Optional, Callable, TypeVar, Protocol, etc.
+    - Type expressions only inside real annotation contexts
+    - Return type arrows: `->`
+    - Parameter / variable / class-base annotations
+    - Generic types: `list[T]`, `dict[K, V]`, `tuple[int, ...]`
+    - Union types: `X | Y` (only inside type regions)
+    - typing names: Optional, Callable, Annotated, TypeIs, ReadOnly,
+      NotRequired, TypeVar, Protocol, etc.
+    - CapWords / user aliases inside annotations (`User`, `Comparable`)
     - Type comments: `# type: int`
-    - Python 3.12+ type parameter syntax: `def func[T](x: T) -> T:`
+    - Python 3.12+ type parameters and `type` aliases
+    - Docstrings via nextgroup after the header colon
     - Enhanced f-string support with debug specifier
-    - Modern match/case statements (Python 3.10+)
-    - Operator highlighting
-    - Function call detection
-    - Comprehensive builtin and exception coverage
+    - match/case and except* (Python 3.10+ / 3.11+)
+    - Operator highlighting (longest match first; `->` is never an operator)
 
 ==============================================================================
 2. INSTALLATION                            *python-syntax-enhanced-install*
 
 Using vim-plug:~
 >
-    Plug 'abc-terminal/python-syntax-enhanced'
+    Plug 'aaronbcarlisle/python-syntax-enhanced'
 <
 Or for local installation:~
 >
@@ -54,7 +58,7 @@ Or for local installation:~
 <
 Using Vundle:~
 >
-    Plugin 'abc-terminal/python-syntax-enhanced'
+    Plugin 'aaronbcarlisle/python-syntax-enhanced'
 <
 Manual Installation:~
 
@@ -81,24 +85,36 @@ Or configure individually:~
     let g:python_highlight_string_formatting = 1  " String formatting (default: 1)
     let g:python_highlight_doctests = 1           " Doctests (default: 1)
     let g:python_highlight_space_errors = 0       " Space errors (default: 0)
+    let g:python_enhanced_colors = 1              " Palette on load/ColorScheme
 <
+Set `g:python_enhanced_colors` to 0 to use only |:hi-default| links so a
+colorscheme owns every group.
+
 For large files with complex nesting:~
 >
-    let g:python_slow_sync = 1                    " Better sync (slower)
+    let g:python_slow_sync = 1                    " syn sync fromstart
 <
+Otherwise the syntax file syncs at def/class lines with minlines=100.
+The ftplugin does not force 'foldmethod'.
 
 ==============================================================================
 4. TYPE ANNOTATIONS                          *python-syntax-enhanced-types*
 
-This plugin provides comprehensive type annotation highlighting:
+Type highlighting applies only inside annotation regions:
+
+    - Parameter lists after def / async def (nested () allowed for defaults)
+    - Return types from `->` through the header `:`
+    - Statement annotations `name: Type` (control keywords excluded)
+    - Class bases `class Foo(Bar, Generic[T])`
+    - PEP 695 type parameters and `type` aliases
+
+Outside those regions, `list(` stays |pythonBuiltin|.
 
 Return Type Annotations:~
 >
     def greet(name: str) -> str:
         return f"Hello, {name}"
 <
-The `->` is highlighted as an Operator, and `str` is highlighted as Type.
-
 Parameter Annotations:~
 >
     def process(data: bytes, count: int = 10) -> None:
@@ -148,18 +164,25 @@ Protocol Classes:~
 Type Annotation Groups:~
 
     pythonReturnArrow       The `->` symbol
-    pythonTypingType        typing module types (Optional, Callable, etc.)
-    pythonTypingContainer   Container types (List, Dict, Set, etc.)
-    pythonTypePrimitive     Primitive types (int, str, bool, etc.)
-    pythonTypeUnion         Union operator `|`
-    pythonTypeBracket       Generic brackets `[`, `]`
+    pythonTypingType        typing module types (Optional, Annotated, …)
+    pythonPrimitiveType     Builtin types used as annotations (int, str, list)
+    pythonTypeName          CapWords / aliases / TypeVars in annotations
+    pythonTypeDotted        Dotted type paths (collections.abc.Sequence)
+    pythonTypeUnion         Union operator `|` (inside type regions only)
+    pythonTypeBracket       Generic brackets `[` `]` and type parentheses
     pythonTypeComment       Type comments `# type: ...`
-    pythonTypeVar           Type variables in type parameter lists
-    pythonTypeAnnotation    The full type annotation
+    pythonTypeNone          `None` inside a type expression
+    pythonTypeEllipsis      `...` inside a type expression
+    pythonTypeString        Quoted forward references
+    pythonParamAnnotation   Parameter annotation region
+    pythonReturnType        Return type region
+    pythonStmtAnnotation    Statement annotation region
+    pythonDocstring         Module / function / class docstrings
+    pythonSelfRef           self / cls / mcs
 
 Core Groups:~
 
-    pythonStatement         Keywords (def, class, return, etc.)
+    pythonStatement         Keywords (def, class, return, type, etc.)
     pythonFunction          Function names
     pythonClass             Class names
     pythonDecorator         Decorator @ symbol
@@ -169,24 +192,24 @@ Core Groups:~
     pythonNumber            Numeric literals
     pythonBuiltin           Built-in functions
     pythonExceptions        Exception classes
-    pythonOperatorSymbol    Operators (+, -, *, etc.)
+    pythonOperatorSymbol    Operators (+, -, *, | bitwise, etc.)
 
 Customizing Colors:~
 
-Add to your vimrc after colorscheme:
+Add to your vimrc after colorscheme (or set g:python_enhanced_colors = 0):
 >
-    " Make type annotations stand out
     hi pythonTypingType     ctermfg=Cyan guifg=#56B6C2
-    hi pythonTypingContainer ctermfg=Cyan guifg=#56B6C2
-    hi pythonTypePrimitive  ctermfg=Yellow guifg=#E5C07B
+    hi pythonPrimitiveType  ctermfg=Yellow guifg=#E5C07B
     hi pythonReturnArrow    ctermfg=Magenta guifg=#C678DD
+    hi pythonDocstring      ctermfg=Green guifg=#98C379
 <
 
 ==============================================================================
 6. COMMANDS                                *python-syntax-enhanced-commands*
 
 :PythonSyntaxEnableAll                      *:PythonSyntaxEnableAll*
-    Enable all highlighting features and reload syntax.
+    Enable all highlighting features and reload this plugin's Python syntax
+    in the current buffer only (does not run global `:syntax off`).
 
 :PythonSyntaxInfo                           *:PythonSyntaxInfo*
     Show current configuration status.
@@ -203,8 +226,8 @@ Type annotations not highlighted:~
     `syntax on` in your vimrc.
 
 Conflicts with other plugins:~
-    This plugin replaces vim's built-in Python syntax. Disable any other
-    Python syntax plugins (like vim-python/python-syntax) to avoid conflicts.
+    This plugin force-loads its syntax file on FileType python. Disable any
+    other Python syntax plugins (like vim-python/python-syntax).
 
 Manual syntax resync:~
     If highlighting breaks mid-editing, use `:syntax sync fromstart` or
@@ -212,6 +235,17 @@ Manual syntax resync:~
 
 ==============================================================================
 8. CHANGELOG                              *python-syntax-enhanced-changelog*
+
+1.1.0 (2026-09-26)~
+    - Force-load syntax/python.vim on FileType; remove after/syntax duplicates
+    - Type expressions only in annotation regions; CapWords aliases supported
+    - `|` is union only inside types; operators are one longest-first match
+    - Docstrings via nextgroup after header colon
+    - except*, type statement vs type(), Annotated/TypeIs/ReadOnly/NotRequired
+    - Color palette via one function on load + ColorScheme
+    - ftplugin no longer forces foldmethod; sync via g:python_slow_sync
+    - :PythonSyntaxEnableAll reloads current buffer only
+    - Add tests/test_syntax.vim synID assertions
 
 1.0.0 (2025-12-18)~
     - Initial release

@@ -1,47 +1,32 @@
 " Vim syntax file
 " Language:     Python (Enhanced with Type Annotations)
 " Maintainer:   Aaron Carlisle / ABC-Terminal
-" Last Change:  2025 Dec 18
-" Version:      1.0.0
+" Last Change:  2026 Sep 26
+" Version:      1.1.0
 "
 " Description:
-"   Enhanced Python syntax highlighting with comprehensive type annotation
-"   support. Designed to compete with IDE-level highlighting.
-"
-" Features:
-"   - Full type annotation support (PEP 484, 526, 544, 585, 604, 612, 673, 695)
-"   - Return type arrows (->)
-"   - Generic types (List[T], Dict[K, V])
-"   - Union types (X | Y)
-"   - typing module builtins
-"   - TypeVar, ParamSpec, TypeVarTuple
-"   - Protocol and Generic classes
-"   - Type comments (# type: ...)
-"   - Modern Python 3.10+ match/case
-"   - Python 3.12+ type parameter syntax
-"   - Enhanced f-string support
-"   - Operator highlighting
-"   - Function call detection
+"   Enhanced Python syntax highlighting with type expressions colored only
+"   inside real annotation contexts (parameters, returns, assignments, bases,
+"   PEP 695 type parameters / type aliases).
 "
 " Configuration Options:
-"   let g:python_enhanced_highlight_all = 1       " Enable all features
-"   let g:python_highlight_type_annotations = 1   " Type annotations (default: 1)
-"   let g:python_highlight_operators = 1          " Operators (default: 1)
-"   let g:python_highlight_func_calls = 1         " Function calls (default: 0)
-"   let g:python_highlight_class_vars = 1         " self, cls (default: 1)
-"   let g:python_highlight_builtins = 1           " Builtins (default: 1)
-"   let g:python_highlight_exceptions = 1         " Exceptions (default: 1)
-"   let g:python_highlight_string_formatting = 1  " String formatting (default: 1)
-"   let g:python_highlight_doctests = 1           " Doctests (default: 1)
-"   let g:python_highlight_space_errors = 0       " Space errors (default: 0)
-"   let g:python_slow_sync = 1                    " Better sync for large files
+"   let g:python_enhanced_highlight_all = 1
+"   let g:python_highlight_type_annotations = 1
+"   let g:python_highlight_operators = 1
+"   let g:python_highlight_func_calls = 0
+"   let g:python_highlight_class_vars = 1
+"   let g:python_highlight_builtins = 1
+"   let g:python_highlight_exceptions = 1
+"   let g:python_highlight_string_formatting = 1
+"   let g:python_highlight_doctests = 1
+"   let g:python_highlight_space_errors = 0
+"   let g:python_slow_sync = 0
+"   let g:python_enhanced_colors = 1   " 0 = hi def link only
 
-" Quit when a syntax file was already loaded
 if exists("b:current_syntax")
   finish
 endif
 
-" We need nocompatible mode in order to continue lines with backslashes
 let s:cpo_save = &cpo
 set cpo&vim
 
@@ -49,7 +34,6 @@ set cpo&vim
 " Configuration
 " ============================================================================
 
-" Enable all highlighting
 if get(g:, 'python_enhanced_highlight_all', 0) || get(g:, 'python_highlight_all', 0)
   let g:python_highlight_type_annotations = 1
   let g:python_highlight_operators = 1
@@ -61,7 +45,6 @@ if get(g:, 'python_enhanced_highlight_all', 0) || get(g:, 'python_highlight_all'
   let g:python_highlight_doctests = 1
 endif
 
-" Set defaults for unset options
 let s:type_annotations = get(g:, 'python_highlight_type_annotations', 1)
 let s:operators = get(g:, 'python_highlight_operators', 1)
 let s:func_calls = get(g:, 'python_highlight_func_calls', 0)
@@ -77,7 +60,6 @@ let s:slow_sync = get(g:, 'python_slow_sync', 0)
 " Keywords and Statements
 " ============================================================================
 
-" Python keywords (alphabetical within groups)
 syn keyword pythonStatement     False None True
 syn keyword pythonStatement     as assert break continue del global
 syn keyword pythonStatement     lambda nonlocal pass return with yield
@@ -86,42 +68,51 @@ syn keyword pythonStatement     def nextgroup=pythonFunction skipwhite
 syn keyword pythonConditional   elif else if
 syn keyword pythonRepeat        for while
 syn keyword pythonOperator      and in is not or
-syn keyword pythonException     except finally raise try
+syn keyword pythonException     finally raise try
+" except and except* as one exception item (Python 3.11+)
+syn match   pythonException     "\<except\*\=\>" display
 syn keyword pythonInclude       from import
 syn keyword pythonAsync         async await
 
-" Soft keywords (Python 3.10+ match/case, Python 3.12+ type)
+" Soft keywords (Python 3.10+ match/case)
 syn match   pythonConditional   "^\s*\zscase\%(\s\+.*:.*$\)\@="
 syn match   pythonConditional   "^\s*\zsmatch\%(\s\+.*:\s*\%(#.*\)\=$\)\@="
+
+" PEP 695 type statement: type Name[...] = ...
+" (builtin type() call is handled separately below)
 syn match   pythonStatement     "\<type\ze\s\+\h\w*" nextgroup=pythonTypeAlias skipwhite
 
-" Class, function, and type alias names (contained - highlighted when following keywords)
+" Class, function, and type alias names
 syn match   pythonClass         "\h\w*" display contained
+      \ nextgroup=pythonTypeParamList,pythonClassBases,pythonDefColon skipwhite
 syn match   pythonFunction      "\h\w*" display contained
+      \ nextgroup=pythonTypeParamList,pythonParamList skipwhite
 syn match   pythonTypeAlias     "\h\w*" display contained
+      \ nextgroup=pythonTypeParamList,pythonTypeAliasEq skipwhite
+
+" Header colon after def/class -> docstring via nextgroup (not lookbehind)
+syn match   pythonDefColon      ":" contained
+      \ nextgroup=pythonDocstring skipwhite skipempty
 
 " ============================================================================
-" Type Annotations - The Main Feature
+" Type expression cluster (only used inside annotation regions)
 " ============================================================================
 
 if s:type_annotations
-  " ==========================================================================
-  " TYPING MODULE TYPES - These highlight GLOBALLY (like IDEs)
-  " ==========================================================================
-
-  " Typing module special types - NOT contained, match everywhere
-  syn keyword pythonTypingType
+  " Contained typing names (annotation contexts only)
+  syn keyword pythonTypingType contained
         \ Any AnyStr
+        \ Annotated
         \ Callable ClassVar Concatenate
         \ Final ForwardRef
         \ Generic
         \ Literal LiteralString
-        \ Never NewType NoReturn
+        \ Never NewType NoReturn NotRequired
         \ Optional
         \ ParamSpec ParamSpecArgs ParamSpecKwargs Protocol
-        \ Required
+        \ ReadOnly Required
         \ Self
-        \ Tuple Type TypeAlias TypeGuard TypeVar TypeVarTuple
+        \ Tuple Type TypeAlias TypeGuard TypeIs TypeVar TypeVarTuple
         \ Union Unpack
         \ Awaitable Coroutine AsyncIterable AsyncIterator AsyncGenerator
         \ Iterable Iterator Generator
@@ -137,33 +128,137 @@ if s:type_annotations
         \ NamedTuple TypedDict
         \ SupportsInt SupportsFloat SupportsComplex SupportsBytes
         \ SupportsAbs SupportsRound SupportsIndex
-
-  " Container types from typing (List, Dict, etc.) - highlight globally
-  syn keyword pythonTypingContainer
-        \ List Dict Set FrozenSet Tuple
+        \ List Dict Set FrozenSet
         \ Deque DefaultDict OrderedDict Counter ChainMap
 
-  " ==========================================================================
-  " RETURN TYPE ARROW
-  " ==========================================================================
+  " Builtin primitives as types (only inside annotations)
+  syn keyword pythonPrimitiveType contained
+        \ str int float bool bytes bytearray
+        \ list dict set frozenset tuple
+        \ object type complex
+        \ memoryview range slice
 
-  " The -> arrow for return types - highlight as Operator
-  syn match   pythonReturnArrow     "->" display
+  " None and Ellipsis inside types
+  syn keyword pythonTypeNone    None contained
+  syn match   pythonTypeEllipsis "\.\.\." contained
 
-  " ==========================================================================
-  " UNION TYPE OPERATOR
-  " ==========================================================================
+  " Union pipe only inside type regions
+  syn match   pythonTypeUnion   "|" contained
 
-  " Union type: X | Y (Python 3.10+) - needs to not conflict with bitwise or
-  " Only match | when surrounded by type-like context
-  syn match   pythonTypeUnion       "\s|\s" display
+  " Commas inside type expressions (e.g. dict[str, int])
+  syn match   pythonTypeComma   "," contained
 
-  " ==========================================================================
-  " TYPE COMMENTS
-  " ==========================================================================
+  " Dotted type names: collections.abc.Sequence
+  syn match   pythonTypeDotted  "\h\w*\%(\.\h\w*\)\+" contained
+        \ contains=pythonTypingType,pythonPrimitiveType
 
-  " Type comments: # type: ... (PEP 484)
-  syn match   pythonTypeComment     "#\s*type:\s*.*$"
+  " CapWords / aliases / TypeVars / user types
+  syn match   pythonTypeName    "\h\w*" contained
+
+  " Quoted forward references
+  syn region  pythonTypeString  start=+[uUrR]\=\z(['"]\)+ end="\z1" skip="\\\\\|\\\z1"
+        \ contained contains=NONE
+
+  " Nested brackets and parentheses inside type expressions
+  syn region  pythonTypeBracket matchgroup=pythonTypeBracket
+        \ start="\[" end="\]" contained
+        \ contains=@pythonTypeExpr
+  syn region  pythonTypeParen matchgroup=pythonTypeBracket
+        \ start="(" end=")" contained
+        \ contains=@pythonTypeExpr
+
+  syn cluster pythonTypeExpr contains=
+        \ pythonPrimitiveType,pythonTypingType,pythonTypeName,pythonTypeDotted,
+        \ pythonTypeUnion,pythonTypeBracket,pythonTypeParen,pythonTypeComma,
+        \ pythonTypeEllipsis,pythonTypeNone,pythonTypeString
+
+  " -------------------------------------------------------------------------
+  " PEP 695 type parameter lists: def f[T], class C[T], type A[T]
+  " -------------------------------------------------------------------------
+  syn region  pythonTypeParamList matchgroup=pythonTypeBracket
+        \ start="\%(\%(\%(async\s\+\)\=def\|class\|type\)\s\+\h\w*\s*\)\@<=\["
+        \ end="\]"
+        \ contains=@pythonTypeExpr,pythonTypeParamStar
+        \ nextgroup=pythonParamList,pythonClassBases,pythonTypeAliasEq,pythonDefColon
+        \ skipwhite skipnl
+
+  syn match   pythonTypeParamStar "[*]\{1,2}" contained nextgroup=pythonTypeName skipwhite
+
+  " -------------------------------------------------------------------------
+  " Parameter lists after def / async def (lookbehind so sync cannot drop them)
+  " Nested () for defaults via self-containment.
+  " -------------------------------------------------------------------------
+  syn region  pythonParamList matchgroup=pythonParams
+        \ start="\%(\%(async\s\+\)\=def\s\+\h\w*\%(\s*\[[^[\]]*\]\)\=\s*\)\@<=("
+        \ end=")"
+        \ contains=pythonParamList,pythonParamAnnotation,pythonClassVar,pythonSelfRef,
+        \          pythonBuiltin,pythonNumber,pythonString,pythonRawString,pythonFString,
+        \          pythonBytes,pythonOperatorSymbol,pythonComment,pythonEllipsis,
+        \          pythonDecoratorName,@Spell
+        \ nextgroup=pythonReturnType,pythonDefColon
+        \ skipwhite skipnl
+
+  " : annotation inside params — ends at top-level = , or )
+  " Nested [...] / (...) are contained and consume internal commas.
+  syn region  pythonParamAnnotation matchgroup=pythonTypeColon
+        \ start=":" end="\ze\%(\s*\%(=\|,\|)\)\)" contained
+        \ contains=@pythonTypeExpr
+
+  " -------------------------------------------------------------------------
+  " Return type: -> through header : (not contained — any -> … : is a return type)
+  " -------------------------------------------------------------------------
+  syn region  pythonReturnType matchgroup=pythonReturnArrow
+        \ start="->" end="\ze\s*:"
+        \ contains=@pythonTypeExpr
+        \ nextgroup=pythonDefColon
+        \ skipwhite skipnl
+
+  " Always color -> as return arrow (never as operator)
+  syn match   pythonReturnArrow "->" display
+
+  " -------------------------------------------------------------------------
+  " Class bases: class Foo(Bar, Generic[T])
+  " -------------------------------------------------------------------------
+  syn region  pythonClassBases matchgroup=pythonParams
+        \ start="\%(class\s\+\h\w*\%(\s*\[[^[\]]*\]\)\=\s*\)\@<=("
+        \ end=")"
+        \ contains=@pythonTypeExpr,pythonClassBases,pythonComment
+        \ nextgroup=pythonDefColon
+        \ skipwhite skipnl
+
+  " -------------------------------------------------------------------------
+  " Statement annotations: name: Type [= ...]
+  " Exclude control-flow keywords
+  " -------------------------------------------------------------------------
+  syn match   pythonAnnotatedAssign
+        \ "^\s*\%(\%(\%(async\s\+\)\=def\|class\|if\|elif\|else\|while\|for\|with\|try\|except\|match\|case\|type\|return\|yield\|assert\|del\|global\|nonlocal\|import\|from\|raise\|pass\|break\|continue\|await\)\>\)\@!\zs\h\w*\%(\s*,\s*\h\w*\)*\s*\ze:"
+        \ nextgroup=pythonStmtAnnotation
+        \ skipwhite
+
+  syn region  pythonStmtAnnotation matchgroup=pythonTypeColon
+        \ start=":"
+        \ end="\ze\%(\s*=\|$\)"
+        \ contained
+        \ contains=@pythonTypeExpr
+        \ oneline
+
+  " -------------------------------------------------------------------------
+  " type Alias = ...  RHS is a type expression
+  " -------------------------------------------------------------------------
+  syn match   pythonTypeAliasEq "=" contained
+        \ nextgroup=pythonTypeAliasValue skipwhite
+
+  syn region  pythonTypeAliasValue
+        \ start="\ze\S"
+        \ end="$"
+        \ contained
+        \ contains=@pythonTypeExpr,pythonComment
+        \ oneline
+
+  " -------------------------------------------------------------------------
+  " Type comments: # type: ...
+  " -------------------------------------------------------------------------
+  syn match   pythonTypeComment "#\s*type:\s*.*$" contains=@pythonTypeExpr
 
 endif
 
@@ -172,32 +267,20 @@ endif
 " ============================================================================
 
 if s:class_vars
+  syn keyword pythonSelfRef     self cls mcs
   syn keyword pythonClassVar    self cls mcs
 endif
 
 " ============================================================================
-" Operators
+" Operators — one match, longest alternative first; no -> ; | is bitwise here
 " ============================================================================
 
 if s:operators
-  " Arithmetic operators
-  syn match   pythonOperatorSymbol  "\%(+\|-\|\*\|@\|/\|%\|\*\*\|//\)" display
-
-  " Comparison operators
-  syn match   pythonOperatorSymbol  "\%(==\|!=\|<>\|<=\|>=\|<\|>\)" display
-
-  " Bitwise operators
-  syn match   pythonOperatorSymbol  "\%(\~\|&\||\|\^\|<<\|>>\)" display
-
-  " Assignment operators
-  syn match   pythonOperatorSymbol  "\%(=\|+=\|-=\|\*=\|/=\|//=\|%=\|\*\*=\)" display
-  syn match   pythonOperatorSymbol  "\%(&=\||=\|\^=\|>>=\|<<=\|@=\)" display
-
-  " Walrus operator (Python 3.8+)
-  syn match   pythonOperatorSymbol  ":=" display
-
-  " Don't highlight -> as operator (it's a return type arrow)
-  " Don't highlight : as operator in most contexts (it's structural)
+  " Longest alternatives first. Literal ~ must be \~ (bare ~ is last-substitute).
+  " & and | are literal in magic mode; \| separates alternatives.
+  syn match pythonOperatorSymbol
+        \ "\%(<<=\|>>=\|\*\*=\|\/\/=\|:=\|+=\|-=\|\*=\|\/=\|%=\|&=\||=\|\^=\|@=\|==\|!=\|<>\|<=\|>=\|\/\/\|\*\*\|<<\|>>\|+\|-\|\*\|@\|\/\|%\|<\|>\|=\|\~\|&\||\|\^\)"
+        \ display
 endif
 
 " ============================================================================
@@ -205,20 +288,17 @@ endif
 " ============================================================================
 
 if s:func_calls
-  " Function call: name(
-  syn match   pythonFunctionCall    "\h\w*\ze\s*(" display
-        \ contains=pythonBuiltin,pythonTypingType
+  syn match   pythonFunctionCall "\h\w*\ze\s*(" display
+        \ contains=pythonBuiltin
 endif
 
 " ============================================================================
 " Decorators
 " ============================================================================
 
-" A dot must be allowed because of @MyClass.myfunc decorators
-syn match   pythonDecorator         "@" display contained
-syn match   pythonDecoratorName     "@\s*\h\%(\w\|\.\)*" display contains=pythonDecorator
+syn match   pythonDecorator     "@" display contained
+syn match   pythonDecoratorName "@\s*\h\%(\w\|\.\)*" display contains=pythonDecorator
 
-" Matrix multiplication: handle @ used as operator (PEP 465)
 syn match   pythonMatrixMultiply
       \ "\%(\w\|[])]\)\s*@"
       \ contains=ALLBUT,pythonDecoratorName,pythonDecorator,pythonClass,pythonFunction,pythonTypeAlias,pythonDoctestValue
@@ -228,24 +308,32 @@ syn match   pythonMatrixMultiply
 " Comments
 " ============================================================================
 
-syn match   pythonComment           "#.*$" contains=pythonTodo,pythonTypeComment,@Spell
-syn keyword pythonTodo              FIXME NOTE NOTES TODO XXX HACK BUG OPTIMIZE REVIEW contained
+syn match   pythonComment       "#.*$" contains=pythonTodo,pythonTypeComment,@Spell
+syn keyword pythonTodo          FIXME NOTE NOTES TODO XXX HACK BUG OPTIMIZE REVIEW contained
+
+" ============================================================================
+" Expression cluster for f-string fields (narrow; not ALLBUT)
+" ============================================================================
+
+syn cluster pythonExpression contains=
+      \ pythonBuiltin,pythonNumber,pythonNone,pythonEllipsis,
+      \ pythonString,pythonRawString,pythonFString,pythonBytes,
+      \ pythonOperatorSymbol,pythonOperator,pythonSelfRef,pythonClassVar,
+      \ pythonComment,pythonDecoratorName,pythonExceptions,
+      \ pythonFStringFieldSkip,pythonFStringDebug
 
 " ============================================================================
 " Strings
 " ============================================================================
 
-" Regular strings
 syn region  pythonString matchgroup=pythonQuotes
       \ start=+[uU]\=\z(['"]\)+ end="\z1" skip="\\\\\|\\\z1"
       \ contains=pythonEscape,pythonUnicodeEscape,@Spell
 
-" Triple-quoted strings (can contain doctests)
 syn region  pythonString matchgroup=pythonTripleQuotes
       \ start=+[uU]\=\z('''\|"""\)+ end="\z1" keepend
       \ contains=pythonEscape,pythonUnicodeEscape,pythonSpaceError,pythonDoctest,@Spell
 
-" Raw strings
 syn region  pythonRawString matchgroup=pythonQuotes
       \ start=+[rR]\z(['"]\)+ end="\z1" skip="\\\\\|\\\z1"
       \ contains=@Spell
@@ -253,7 +341,6 @@ syn region  pythonRawString matchgroup=pythonTripleQuotes
       \ start=+[rR]\z('''\|"""\)+ end="\z1" keepend
       \ contains=pythonSpaceError,pythonDoctest,@Spell
 
-" F-strings (formatted string literals)
 syn region  pythonFString matchgroup=pythonQuotes
       \ start=+\c[fF]\z(['"]\)+
       \ end="\z1"
@@ -266,7 +353,6 @@ syn region  pythonFString matchgroup=pythonTripleQuotes
       \ keepend
       \ contains=pythonFStringField,pythonFStringSkip,pythonEscape,pythonUnicodeEscape,pythonSpaceError,pythonDoctest,@Spell
 
-" Raw f-strings
 syn region  pythonRawFString matchgroup=pythonQuotes
       \ start=+\c\%(FR\|RF\)\z(['"]\)+
       \ end="\z1"
@@ -279,7 +365,6 @@ syn region  pythonRawFString matchgroup=pythonTripleQuotes
       \ keepend
       \ contains=pythonFStringField,pythonFStringSkip,pythonSpaceError,pythonDoctest,@Spell
 
-" Byte strings
 syn region  pythonBytes matchgroup=pythonQuotes
       \ start=+\c[bB]\z(['"]\)+
       \ end="\z1"
@@ -292,7 +377,6 @@ syn region  pythonBytes matchgroup=pythonTripleQuotes
       \ keepend
       \ contains=pythonBytesEscape
 
-" Raw byte strings
 syn region  pythonRawBytes matchgroup=pythonQuotes
       \ start=+\c\%(BR\|RB\)\z(['"]\)+
       \ end="\z1"
@@ -303,25 +387,38 @@ syn region  pythonRawBytes matchgroup=pythonTripleQuotes
       \ end="\z1"
       \ keepend
 
-" F-string replacement fields with enhanced support
+" F-string fields — explicit expression cluster (not ALLBUT)
 syn region  pythonFStringField
       \ matchgroup=pythonFStringDelimiter
       \ start=/{/
       \ end=/\%(=\s*\)\=\%(!\a\s*\)\=\%(:\%({\_[^}]*}\|[^{}]*\)\+\)\=}/
       \ contained
-      \ contains=ALLBUT,pythonFStringField,pythonClass,pythonFunction,pythonTypeAlias,pythonDoctest,pythonDoctestValue,@Spell
+      \ contains=@pythonExpression
 
-" Skip matched parentheses, brackets, braces inside f-string fields
 syn match   pythonFStringFieldSkip  /(\_[^()]*)\|\[\_[^][]*]\|{\_[^{}]*}/
       \ contained
-      \ contains=ALLBUT,pythonFStringField,pythonClass,pythonFunction,pythonTypeAlias,pythonDoctest,pythonDoctestValue,@Spell
+      \ contains=@pythonExpression
 
-" Doubled braces are not replacement fields
 syn match   pythonFStringSkip       /{{/ transparent contained contains=NONE
 syn match   pythonFStringSkip       /}}/ transparent contained contains=NONE
 
-" F-string debug specifier (Python 3.8+): f"{expr=}"
+" F-string debug specifier: f"{expr=}"
 syn match   pythonFStringDebug      /\h\w*=\ze[}:!]/ contained containedin=pythonFStringField
+
+" ============================================================================
+" Docstrings (nextgroup after header colon + module docstring)
+" ============================================================================
+
+" Function/class docstrings (triggered via nextgroup=pythonDocstring)
+syn region  pythonDocstring
+      \ start=+[rRuU]\=\z('''\|"""\)+ end="\z1" keepend contained
+      \ contains=pythonEscape,pythonUnicodeEscape,pythonSpaceError,pythonDoctest,@Spell
+
+" Module docstring at top of file
+syn region  pythonDocstring
+      \ start=+\%^\%(\s*#.*\n\|\s*\n\)*\s*\zs[rRuU]\=\z('''\|"""\)+
+      \ end="\z1" keepend
+      \ contains=pythonEscape,pythonUnicodeEscape,pythonSpaceError,pythonDoctest,@Spell
 
 " ============================================================================
 " String Escapes
@@ -334,7 +431,6 @@ syn match   pythonUnicodeEscape     "\%(\\u\x\{4}\|\\U\x\{8}\)" contained
 syn match   pythonUnicodeEscape     "\\N{\a\+\%(\%(\s\a\+[[:alnum:]]*\)\|\%(-[[:alnum:]]\+\)\)*}" contained
 syn match   pythonEscape            "\\$"
 
-" Byte string escapes (no unicode)
 syn match   pythonBytesEscape       +\\[abfnrtv'"\\]+ contained
 syn match   pythonBytesEscape       "\\\o\{1,3}" contained
 syn match   pythonBytesEscape       "\\x\x\{2}" contained
@@ -344,13 +440,8 @@ syn match   pythonBytesEscape       "\\x\x\{2}" contained
 " ============================================================================
 
 if s:string_fmt
-  " %-formatting: %s, %d, %f, %(name)s, etc.
   syn match   pythonStrFormatting   "%\%(([^)]\+)\)\=[#0\-+ ]*\%(\*\|\d\+\)\=\%(\.\%(\*\|\d\+\)\)\=[hlL]\=[diouxXeEfFgGcrsab%]" contained containedin=pythonString,pythonRawString
-
-  " .format() style: {}, {0}, {name}, {0:format}, {name!r:format}
   syn match   pythonStrFormat       "{\%(\%(\d\+\|[[:alpha:]_][[:alnum:]_]*\)\%(\.[[:alpha:]_][[:alnum:]_]*\|\[\%(\d\+\|[^]]*\)\]\)*\)\=\%(![rsa]\)\=\%(:\%([^{}]\|{[^}]*}\)*\)\=}" contained containedin=pythonString,pythonRawString
-
-  " Template strings: $name, ${name}
   syn match   pythonStrTemplate     "\$\$\|\$\h\w*\|\${\h\w*}" contained containedin=pythonString,pythonRawString
 endif
 
@@ -358,7 +449,6 @@ endif
 " Numbers
 " ============================================================================
 
-" Numbers (including underscore separators for Python 3.6+)
 syn match   pythonNumber    "\<0[oO]\%(_\=\o\)\+\>"
 syn match   pythonNumber    "\<0[xX]\%(_\=\x\)\+\>"
 syn match   pythonNumber    "\<0[bB]\%(_\=[01]\)\+\>"
@@ -370,20 +460,19 @@ syn match   pythonNumber
 syn match   pythonNumber
       \ "\%(^\|\W\)\@1<=\%(\d\%(_\=\d\)*\)\=\.\d\%(_\=\d\)*\%([eE][+-]\=\d\%(_\=\d\)*\)\=[jJ]\=\>"
 
-" None literal (also a type)
 syn keyword pythonNone      None
+syn match   pythonEllipsis  "\.\@1<!\.\.\.\ze\.\@!" display
 
 " ============================================================================
 " Builtins
 " ============================================================================
 
 if s:builtins
-  " Built-in constants
   syn keyword pythonBuiltin     False True None
   syn keyword pythonBuiltin     NotImplemented Ellipsis __debug__
   syn keyword pythonBuiltin     quit exit copyright credits license
 
-  " Built-in functions
+  " Built-in functions — type is NOT a keyword here (see match below)
   syn keyword pythonBuiltin     abs all any ascii bin bool breakpoint bytearray
   syn keyword pythonBuiltin     bytes callable chr classmethod compile complex
   syn keyword pythonBuiltin     delattr dict dir divmod enumerate eval exec
@@ -393,14 +482,13 @@ if s:builtins
   syn keyword pythonBuiltin     memoryview min next object oct open ord pow
   syn keyword pythonBuiltin     print property range repr reversed round set
   syn keyword pythonBuiltin     setattr slice sorted staticmethod str sum super
-  syn keyword pythonBuiltin     tuple type vars zip __import__
+  syn keyword pythonBuiltin     tuple vars zip __import__
 
-  " Ellipsis literal
-  syn match   pythonEllipsis    "\.\@1<!\.\.\.\ze\.\@!" display
+  " type() call stays builtin; type Name is the statement (above)
+  syn match   pythonBuiltin     "\<type\>\ze\s*(" display
 
-  " Avoid highlighting attributes as builtins
   syn match   pythonAttribute   /\.\h\w*/hs=s+1
-        \ contains=ALLBUT,pythonBuiltin,pythonClass,pythonFunction,pythonTypeAlias,pythonAsync,pythonTypingType,pythonTypingContainer,pythonTypePrimitive
+        \ contains=ALLBUT,pythonBuiltin,pythonClass,pythonFunction,pythonTypeAlias,pythonAsync,pythonTypingType,pythonPrimitiveType
         \ transparent
 endif
 
@@ -409,11 +497,8 @@ endif
 " ============================================================================
 
 if s:exceptions
-  " Base exceptions
   syn keyword pythonExceptions  BaseException Exception
   syn keyword pythonExceptions  ArithmeticError BufferError LookupError
-
-  " Built-in exceptions
   syn keyword pythonExceptions  AssertionError AttributeError EOFError
   syn keyword pythonExceptions  FloatingPointError GeneratorExit ImportError
   syn keyword pythonExceptions  IndentationError IndexError KeyError
@@ -427,11 +512,7 @@ if s:exceptions
   syn keyword pythonExceptions  UnicodeEncodeError UnicodeError
   syn keyword pythonExceptions  UnicodeTranslateError ValueError
   syn keyword pythonExceptions  ZeroDivisionError
-
-  " OS exception aliases
   syn keyword pythonExceptions  EnvironmentError IOError WindowsError
-
-  " OS exceptions (Python 3.3+)
   syn keyword pythonExceptions  BlockingIOError BrokenPipeError
   syn keyword pythonExceptions  ChildProcessError ConnectionAbortedError
   syn keyword pythonExceptions  ConnectionError ConnectionRefusedError
@@ -439,11 +520,7 @@ if s:exceptions
   syn keyword pythonExceptions  FileNotFoundError InterruptedError
   syn keyword pythonExceptions  IsADirectoryError NotADirectoryError
   syn keyword pythonExceptions  PermissionError ProcessLookupError TimeoutError
-
-  " Exception groups (Python 3.11+)
   syn keyword pythonExceptions  ExceptionGroup BaseExceptionGroup
-
-  " Warnings
   syn keyword pythonExceptions  BytesWarning DeprecationWarning EncodingWarning
   syn keyword pythonExceptions  FutureWarning ImportWarning
   syn keyword pythonExceptions  PendingDeprecationWarning ResourceWarning
@@ -456,9 +533,7 @@ endif
 " ============================================================================
 
 if s:space_errors
-  " Trailing whitespace
   syn match   pythonSpaceError  display excludenl "\s\+$"
-  " Mixed tabs and spaces
   syn match   pythonSpaceError  display " \+\t"
   syn match   pythonSpaceError  display "\t\+ "
 endif
@@ -492,17 +567,17 @@ syn match   pythonEncoding      "^#.*\%(coding[:=]\s*\)\@<=\S\+" display
 " ============================================================================
 
 if s:slow_sync
-  syn sync minlines=2000
+  syn sync fromstart
 else
-  " Fast sync at function/class definitions
-  syn sync match pythonSync grouphere NONE "^\%(def\|class\|async\s\+def\)\s\+\h\w*\s*[(:\[]"
+  " Param/return regions use lookbehind, so syncing at def/class is safe.
+  syn sync match pythonSync grouphere NONE "^\%(def\|class\|async\s\+def\)\s\+\h\w*"
+  syn sync minlines=100
 endif
 
 " ============================================================================
-" Highlight Links
+" Highlight Links (always; palette applied separately when colors enabled)
 " ============================================================================
 
-" Core syntax
 hi def link pythonStatement         Statement
 hi def link pythonConditional       Conditional
 hi def link pythonRepeat            Repeat
@@ -519,8 +594,9 @@ hi def link pythonComment           Comment
 hi def link pythonTodo              Todo
 hi def link pythonShebang           Comment
 hi def link pythonEncoding          Comment
+hi def link pythonDefColon          Delimiter
+hi def link pythonParams            Delimiter
 
-" Strings
 hi def link pythonString            String
 hi def link pythonRawString         String
 hi def link pythonFString           String
@@ -534,75 +610,76 @@ hi def link pythonUnicodeEscape     pythonEscape
 hi def link pythonBytesEscape       Special
 hi def link pythonFStringDelimiter  Special
 hi def link pythonFStringDebug      Special
+hi def link pythonDocstring         String
 
-" String formatting
 if s:string_fmt
   hi def link pythonStrFormatting   Special
   hi def link pythonStrFormat       Special
   hi def link pythonStrTemplate     Special
 endif
 
-" Numbers
 hi def link pythonNumber            Number
 hi def link pythonNone              Constant
+hi def link pythonEllipsis          Constant
 
-" Builtins
 if s:builtins
   hi def link pythonBuiltin         Function
-  hi def link pythonEllipsis        pythonBuiltin
 endif
 
-" Exceptions
 if s:exceptions
   hi def link pythonExceptions      Structure
 endif
 
-" Class variables
 if s:class_vars
   hi def link pythonClassVar        Identifier
+  hi def link pythonSelfRef         Identifier
 endif
 
-" Operators
 if s:operators
   hi def link pythonOperatorSymbol  Operator
 endif
 
-" Function calls
 if s:func_calls
   hi def link pythonFunctionCall    Function
 endif
 
-" Type annotations - THE KEY HIGHLIGHTING
 if s:type_annotations
   hi def link pythonReturnArrow     Operator
   hi def link pythonTypeColon       Operator
   hi def link pythonTypingType      Type
-  hi def link pythonTypingContainer Type
-  hi def link pythonTypePrimitive   Type
+  hi def link pythonPrimitiveType   Type
+  hi def link pythonTypeName        Type
+  hi def link pythonTypeDotted      Type
   hi def link pythonTypeUnion       Operator
   hi def link pythonTypeBracket     Delimiter
+  hi def link pythonTypeComma       Delimiter
+  hi def link pythonTypeNone        Constant
+  hi def link pythonTypeEllipsis    Constant
+  hi def link pythonTypeString      String
   hi def link pythonTypeComment     SpecialComment
-  hi def link pythonTypeVar         Identifier
-  hi def link pythonTypeVarBound    Type
+  hi def link pythonTypeParamStar   Operator
   hi def link pythonTypeAnnotation  Type
   hi def link pythonReturnType      Type
+  hi def link pythonParamAnnotation Type
+  hi def link pythonStmtAnnotation  Type
+  hi def link pythonTypeAliasValue  Type
+  hi def link pythonTypeVar         Identifier
 endif
 
-" Doctests
 if s:doctests
   hi def link pythonDoctest         Special
   hi def link pythonDoctestValue    Define
   hi def link pythonDoctestEllipsis pythonBuiltin
 endif
 
-" Space errors
 if s:space_errors
   hi def link pythonSpaceError      Error
 endif
 
-" ============================================================================
-" Cleanup
-" ============================================================================
+" Apply palette when the plugin function is available
+if exists('*PythonSyntaxEnhancedApplyColors')
+  call PythonSyntaxEnhancedApplyColors()
+endif
 
 let b:current_syntax = "python"
 

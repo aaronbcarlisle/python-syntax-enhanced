@@ -153,9 +153,90 @@ def sort_items(items: list[Comparable]) -> list[Comparable]:
 UserId = NewType('UserId', int)
 UserDict: TypeAlias = dict[str, Any]
 
-# Note: Python 3.12+ "type" statement would be:
-# type Point = tuple[int, int]
-# type Vector[T] = list[T]
+# Python 3.12+ type statement
+type Point = tuple[int, int]
+type Vector[T] = list[T]
+
+
+# =============================================================================
+# PEP 695 type parameters on def / class
+# =============================================================================
+
+def identity[T](x: T) -> T:
+    """Type parameter list on def."""
+    return x
+
+
+class Box[T]:
+    """Type parameter list on class."""
+
+    def __init__(self, value: T) -> None:
+        self.value = value
+
+
+# =============================================================================
+# Custom / CapWords types in annotations (must color as types)
+# =============================================================================
+
+def needs_comparable(items: list[Comparable]) -> Comparable:
+    """User-defined Protocol name in return/params."""
+    return items[0]
+
+
+def make_user(name: str) -> User:
+    """Forward-ref style CapWords return type."""
+    return User(id=1, name=name)
+
+
+# =============================================================================
+# list() builtin vs list[...] annotation
+# =============================================================================
+
+built = list(range(10))  # list here is builtin call
+annotated: list[int] = []  # list here is primitive type
+
+
+# =============================================================================
+# Bitwise | vs union |
+# =============================================================================
+
+bitwise = 1 & 2 | 3 ^ 4  # | must NOT be pythonTypeUnion
+union_val: int | str | None = 1  # | must be pythonTypeUnion
+
+
+# =============================================================================
+# except* (Python 3.11+)
+# =============================================================================
+
+try:
+    raise ExceptionGroup("eg", [ValueError("x")])
+except* ValueError:
+    pass
+
+
+# =============================================================================
+# Multiline signature + docstring (nextgroup, not lookbehind)
+# =============================================================================
+
+def wrapped_signature(
+    alpha: int,
+    beta: str,
+) -> dict[str, int]:
+    """Docstring after a wrapped signature must still be green."""
+    return {"a": alpha}
+
+
+# =============================================================================
+# typing names added in 1.1: Annotated, TypeIs, ReadOnly, NotRequired
+# =============================================================================
+
+from typing import Annotated, TypeIs, ReadOnly, NotRequired  # noqa: E402
+
+meta: Annotated[int, "units"] = 0
+
+
+def is_str(val: object) -> TypeIs[str]:
+    return isinstance(val, str)
 
 
 # =============================================================================
