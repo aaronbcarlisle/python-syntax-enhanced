@@ -11,7 +11,7 @@ one that colors types only where they are types: parameter and return
 annotations, `x: T` and `self.attr: T`, class bases, and PEP 695 type
 parameters and `type` aliases.
 
-![Before and after: Vim's built-in Python syntax next to python-syntax-enhanced, colorscheme retrobox](https://github.com/user-attachments/assets/e3f130c2-17f7-454b-95ce-0d3ebe375438)
+![Before and after: Vim's built-in Python syntax next to python-syntax-enhanced, colorscheme retrobox](https://github.com/user-attachments/assets/fbeb9a79-df8d-4e06-a339-2d4fc1ca70ef)
 
 ## Features
 
@@ -77,9 +77,9 @@ Run `:helptags ALL` once afterwards to enable `:help python-syntax-enhanced`.
 
 ### Compatibility
 
-Tested in CI on Vim 9.2 (Linux, macOS, Windows) and Neovim 0.12, and locally
-with Vim 9.1. It replaces Vim's built-in `syntax/python.vim`, so disable other
-Python syntax plugins (see [Troubleshooting](#troubleshooting)).
+Tested in CI on Vim 9.1 (Linux), Vim 9.2 (macOS, Windows) and Neovim 0.12.
+It replaces Vim's built-in `syntax/python.vim`, so disable other Python syntax
+plugins (see [Troubleshooting](#troubleshooting)).
 
 In Neovim this is a regular syntax file: it applies when Python is highlighted
 by the syntax engine (Neovim's default). If Tree-sitter highlighting is enabled

@@ -157,6 +157,12 @@ call setline(1, [
       \ '    pass',
       \ 'n = 1  # type: int',
       \ 'o = f()  # type: ignore[attr-defined]',
+      \ 'match command:',
+      \ '    case Point(x=0):',
+      \ '        pass',
+      \ 'match = re.match(p, s)',
+      \ 'def fwd(u: "User") -> "list[User]": ...',
+      \ 'case = 1',
       \ ])
 setlocal filetype=python
 syntax sync fromstart
@@ -282,6 +288,16 @@ call s:AssertGroup(101, s:ColOf(101, 'str'), 'pythonPrimitiveType', 'annotation 
 call s:AssertGroup(105, s:ColOf(105, 'type'), 'pythonComment', '# type: prefix')
 call s:AssertGroup(105, s:ColOf(105, 'int'), 'pythonPrimitiveType', '# type: int')
 call s:AssertGroup(106, s:ColOf(106, 'ignore'), 'pythonComment', '# type: ignore')
+
+" match/case are keywords only as statements (soft keywords)
+call s:AssertGroup(107, s:ColOf(107, 'match'), 'pythonConditional', 'match statement')
+call s:AssertGroup(108, s:ColOf(108, 'case'), 'pythonConditional', 'case clause')
+call s:AssertNotGroup(110, s:ColOf(110, 'match'), 'pythonConditional', 'match as a variable')
+call s:AssertNotGroup(112, s:ColOf(112, 'case'), 'pythonConditional', 'case as a variable')
+
+" Quoted forward references in annotations
+call s:AssertGroup(111, s:ColOf(111, '"User"'), 'pythonTypeString', 'forward ref param')
+call s:AssertGroup(111, s:ColOf(111, '"list'), 'pythonTypeString', 'forward ref return')
 
 " Palette: builtins get their own color, not the Function link
 call s:AssertGroup(4, s:ColOf(4, 'list'), 'pythonBuiltin', 'list() call for palette check')
