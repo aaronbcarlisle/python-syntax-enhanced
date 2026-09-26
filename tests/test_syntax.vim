@@ -107,9 +107,33 @@ call setline(1, [
       \ '    """Docstring after blank line (skipempty+skipnl)."""',
       \ '    pass',
       \ '',
+      \ 'class Box:',
+      \ '    def __init__(self):',
+      \ '        self._items: list[T] = []',
+      \ '        self.a.b: Registry[str, int] = {}',
+      \ '',
+      \ 'msg = f"{[x for x in xs if x]} {await fetch()} {obj.min}"',
+      \ '',
+      \ 'def commented_header() -> int:  # noqa',
+      \ '    """Docstring after commented header."""',
+      \ '    return 1',
+      \ '',
+      \ 'class CommentedClass:  # note',
+      \ '    # leading comment',
+      \ '    """Docstring after comment lines."""',
+      \ '',
+      \ 'result = obj.compute(1, "s") + len(x)',
+      \ 'm = a @ b(1)',
+      \ 'def doc_example():',
+      \ '    """',
+      \ '    >>> y = obj.run(2)',
+      \ '    """',
+      \ '',
+      \ 'class Plain:',
+      \ '    """Plain class docstring."""',
+      \ '',
       \ 'class Holder:',
       \ '    def __init__(self) -> None:',
-      \ '        self._items: list[T] = []',
       \ '        self.name: str',
       \ '        obj.nested.attr: int = 0',
       \ ])
@@ -163,8 +187,9 @@ call s:AssertGroup(30, s:ColOf(30, 'Class'), 'pythonDocstring', 'class docstring
 call s:AssertNotGroup(33, s:ColOf(33, '|'), 'pythonTypeUnion', 'bitwise |')
 call s:AssertGroup(33, s:ColOf(33, '|'), 'pythonOperatorSymbol', 'bitwise | op')
 
-" except*
+" except* (keyword and trailing * are one item)
 call s:AssertGroup(37, s:ColOf(37, 'except*'), 'pythonException', 'except*')
+call s:AssertGroup(37, s:ColOf(37, '*'), 'pythonException', 'except* star')
 
 " type() call is builtin
 call s:AssertGroup(40, s:ColOf(40, 'type'), 'pythonBuiltin', 'type() builtin')
@@ -181,11 +206,38 @@ call s:AssertGroup(49, s:ColOf(49, 'param'), 'pythonComment', 'param annot trail
 " Docstring after blank line following header colon (skipempty + skipnl)
 call s:AssertGroup(55, s:ColOf(55, 'Docstring'), 'pythonDocstring', 'docstring after blank line')
 
-" Dotted attribute statement annotations (self._items: list[T], etc.)
-call s:AssertGroup(60, s:ColOf(60, 'list'), 'pythonPrimitiveType', 'self._items: list')
-call s:AssertGroup(60, s:ColOf(60, 'T'), 'pythonTypeName', 'self._items: list[T]')
-call s:AssertGroup(61, s:ColOf(61, 'str'), 'pythonPrimitiveType', 'self.name: str')
-call s:AssertGroup(62, s:ColOf(62, 'int'), 'pythonPrimitiveType', 'obj.nested.attr: int')
+" Dotted annotation targets: self.attr: Type = ...
+call s:AssertGroup(60, s:ColOf(60, 'list'), 'pythonPrimitiveType', 'self.attr: list[T]')
+call s:AssertGroup(60, s:ColOf(60, 'T]'), 'pythonTypeName', 'self.attr: T param')
+call s:AssertGroup(60, s:ColOf(60, 'self'), 'pythonClassVar', 'self in annotated target')
+call s:AssertGroup(61, s:ColOf(61, 'Registry'), 'pythonTypeName', 'self.a.b: Registry')
+
+" F-string fields keep keyword and attribute highlighting
+call s:AssertGroup(63, s:ColOf(63, 'for'), 'pythonRepeat', 'f-string for')
+call s:AssertGroup(63, s:ColOf(63, 'if'), 'pythonConditional', 'f-string if')
+call s:AssertGroup(63, s:ColOf(63, 'await'), 'pythonAsync', 'f-string await')
+call s:AssertNotGroup(63, s:ColOf(63, 'min'), 'pythonBuiltin', 'f-string obj.min not builtin')
+
+" Docstrings after trailing/leading comments on a def/class header
+call s:AssertGroup(65, s:ColOf(65, 'noqa'), 'pythonDefComment', 'header trailing comment')
+call s:AssertGroup(66, s:ColOf(66, 'Docstring'), 'pythonDocstring', 'docstring after commented def')
+call s:AssertGroup(70, s:ColOf(70, 'leading'), 'pythonDefComment', 'comment line before docstring')
+call s:AssertGroup(71, s:ColOf(71, 'Docstring'), 'pythonDocstring', 'docstring after comment lines')
+
+" Type-only contained groups must not leak into ALLBUT/TOP containers
+call s:AssertGroup(73, s:ColOf(73, '1'), 'pythonNumber', 'number after .attr')
+call s:AssertGroup(73, s:ColOf(73, 'len'), 'pythonBuiltin', 'builtin after .attr')
+call s:AssertNotGroup(73, s:ColOf(73, 'compute'), 'pythonTypeName', 'method not type name')
+call s:AssertGroup(74, s:ColOf(74, '1'), 'pythonNumber', 'number after matmul @')
+call s:AssertGroup(77, s:ColOf(77, '2'), 'pythonNumber', 'number in doctest')
+
+" Class without bases: name -> colon -> docstring chain survives off-screen
+call s:AssertGroup(81, s:ColOf(81, 'Plain'), 'pythonDocstring', 'plain class docstring')
+
+" More dotted targets: bare annotation, non-self multi-level target
+call s:AssertGroup(85, s:ColOf(85, 'str'), 'pythonPrimitiveType', 'self.name: str')
+call s:AssertGroup(86, s:ColOf(86, 'int'), 'pythonPrimitiveType', 'obj.nested.attr: int')
+call s:AssertGroup(86, s:ColOf(86, '0'), 'pythonNumber', 'obj.nested.attr value')
 
 if empty(s:failures)
   echo printf('PASS: %d assertions', s:passed)

@@ -70,7 +70,8 @@ syn keyword pythonRepeat        for while
 syn keyword pythonOperator      and in is not or
 syn keyword pythonException     finally raise try
 " except and except* as one exception item (Python 3.11+)
-syn match   pythonException     "\<except\*\=\>" display
+" (\> cannot follow *, so the star is its own alternative)
+syn match   pythonException     "\<except\%(\*\|\>\)" display
 syn keyword pythonInclude       from import
 syn keyword pythonAsync         async await
 
@@ -83,17 +84,22 @@ syn match   pythonConditional   "^\s*\zsmatch\%(\s\+.*:\s*\%(#.*\)\=$\)\@="
 syn match   pythonStatement     "\<type\ze\s\+\h\w*" nextgroup=pythonTypeAlias skipwhite
 
 " Class, function, and type alias names
-syn match   pythonClass         "\h\w*" display contained
+" No 'display': these start nextgroup chains (-> header colon -> docstring on
+" the next line) that are lost when Vim skips display items off-screen.
+syn match   pythonClass         "\h\w*" contained
       \ nextgroup=pythonTypeParamList,pythonClassBases,pythonDefColon skipwhite
-syn match   pythonFunction      "\h\w*" display contained
+syn match   pythonFunction      "\h\w*" contained
       \ nextgroup=pythonTypeParamList,pythonParamList skipwhite
-syn match   pythonTypeAlias     "\h\w*" display contained
+syn match   pythonTypeAlias     "\h\w*" contained
       \ nextgroup=pythonTypeParamList,pythonTypeAliasEq skipwhite
 
 " Header colon after def/class -> docstring via nextgroup (not lookbehind)
 " skipnl: docstring is almost always on the following line after def/class :
 syn match   pythonDefColon      ":" contained
-      \ nextgroup=pythonDocstring skipwhite skipempty skipnl
+      \ nextgroup=pythonDocstring,pythonDefComment skipwhite skipempty skipnl
+" Comments between the header colon and the docstring keep the chain alive
+syn match   pythonDefComment    "#.*$" contained contains=pythonTodo,@Spell
+      \ nextgroup=pythonDocstring,pythonDefComment skipwhite skipempty skipnl
 
 " ============================================================================
 " Type expression cluster (only used inside annotation regions)
@@ -229,11 +235,12 @@ if s:type_annotations
         \ skipwhite skipnl
 
   " -------------------------------------------------------------------------
-  " Statement annotations: name: Type [= ...] and attr targets (self._items: T)
+  " Statement annotations: name: Type [= ...]  (self.attr: Type is below,
+  " after pythonAttribute)
   " Exclude control-flow keywords
   " -------------------------------------------------------------------------
   syn match   pythonAnnotatedAssign
-        \ "^\s*\%(\%(\%(async\s\+\)\=def\|class\|if\|elif\|else\|while\|for\|with\|try\|except\|match\|case\|type\|return\|yield\|assert\|del\|global\|nonlocal\|import\|from\|raise\|pass\|break\|continue\|await\)\>\)\@!\zs\h\w*\%(\.\h\w*\)*\%(\s*,\s*\h\w*\%(\.\h\w*\)*\)*\s*\ze:"
+        \ "^\s*\%(\%(\%(async\s\+\)\=def\|class\|if\|elif\|else\|while\|for\|with\|try\|except\|match\|case\|type\|return\|yield\|assert\|del\|global\|nonlocal\|import\|from\|raise\|pass\|break\|continue\|await\)\>\)\@!\zs\h\w*\%(\s*,\s*\h\w*\)*\s*\ze:"
         \ nextgroup=pythonStmtAnnotation
         \ skipwhite
 
@@ -263,6 +270,16 @@ if s:type_annotations
   syn match   pythonTypeComment "#\s*type:\s*.*$" contains=@pythonTypeExpr
 
 endif
+
+" Contained helpers that only make sense via nextgroup / annotation regions.
+" Anything using contains=ALLBUT must exclude these, or e.g.
+" pythonTypeAliasValue (start at any \S) swallows the rest of the line.
+syn cluster pythonTypeInternal contains=
+      \ pythonTypingType,pythonPrimitiveType,pythonTypeNone,pythonTypeEllipsis,
+      \ pythonTypeUnion,pythonTypeComma,pythonTypeDotted,pythonTypeName,
+      \ pythonTypeString,pythonTypeBracket,pythonTypeParen,pythonTypeParamStar,
+      \ pythonParamAnnotation,pythonStmtAnnotation,pythonTypeAliasEq,
+      \ pythonTypeAliasValue,pythonDefColon,pythonDefComment,pythonDocstring
 
 " ============================================================================
 " Class Variables (self, cls, mcs)
@@ -303,7 +320,7 @@ syn match   pythonDecoratorName "@\s*\h\%(\w\|\.\)*" display contains=pythonDeco
 
 syn match   pythonMatrixMultiply
       \ "\%(\w\|[])]\)\s*@"
-      \ contains=ALLBUT,pythonDecoratorName,pythonDecorator,pythonClass,pythonFunction,pythonTypeAlias,pythonDoctestValue
+      \ contains=TOP,pythonDecoratorName
       \ transparent
 
 " ============================================================================
@@ -318,6 +335,8 @@ syn keyword pythonTodo          FIXME NOTE NOTES TODO XXX HACK BUG OPTIMIZE REVI
 " ============================================================================
 
 syn cluster pythonExpression contains=
+      \ pythonStatement,pythonConditional,pythonRepeat,pythonAsync,
+      \ pythonAttribute,pythonFunctionCall,
       \ pythonBuiltin,pythonNumber,pythonNone,pythonEllipsis,
       \ pythonString,pythonRawString,pythonFString,pythonBytes,
       \ pythonOperatorSymbol,pythonOperator,pythonSelfRef,pythonClassVar,
@@ -489,9 +508,21 @@ if s:builtins
   " type() call stays builtin; type Name is the statement (above)
   syn match   pythonBuiltin     "\<type\>\ze\s*(" display
 
+  " TOP (not ALLBUT): contained regions would otherwise extend this match
   syn match   pythonAttribute   /\.\h\w*/hs=s+1
-        \ contains=ALLBUT,pythonBuiltin,pythonClass,pythonFunction,pythonTypeAlias,pythonAsync,pythonTypingType,pythonPrimitiveType
+        \ contains=TOP,pythonBuiltin,pythonAsync
         \ transparent
+endif
+
+" Dotted annotation target: self.attr: Type [= ...]
+" Starts at the last .attr (a leading self/cls keyword would outrank a match
+" starting at column 0) and is defined after pythonAttribute so it wins there.
+if s:type_annotations
+  syn match   pythonAnnotatedAttr
+        \ "\%(^\s*\h\w*\%(\.\h\w*\)*\)\@<=\.\h\w*\s*\ze:"
+        \ transparent contains=NONE
+        \ nextgroup=pythonStmtAnnotation
+        \ skipwhite
 endif
 
 " ============================================================================
@@ -547,7 +578,8 @@ endif
 if s:doctests
   syn region  pythonDoctest
         \ start="^\s*>>>\s" end="^\s*$"
-        \ contained contains=ALLBUT,pythonDoctest,pythonEllipsis,pythonClass,pythonFunction,pythonTypeAlias,@Spell
+        \ contained contains=ALLBUT,pythonDoctest,pythonEllipsis,pythonClass,pythonFunction,pythonTypeAlias,
+        \   pythonFStringField,pythonFStringFieldSkip,pythonFStringDebug,@pythonTypeInternal,@Spell
 
   syn region  pythonDoctestValue
         \ start=+^\s*\%(>>>\s\|\.\.\.\s\|"""\|'''\)\@!\S\++ end="$"
@@ -597,6 +629,7 @@ hi def link pythonTodo              Todo
 hi def link pythonShebang           Comment
 hi def link pythonEncoding          Comment
 hi def link pythonDefColon          Delimiter
+hi def link pythonDefComment        pythonComment
 hi def link pythonParams            Delimiter
 
 hi def link pythonString            String
