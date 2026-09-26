@@ -106,6 +106,12 @@ call setline(1, [
       \ '',
       \ '    """Docstring after blank line (skipempty+skipnl)."""',
       \ '    pass',
+      \ '',
+      \ 'class Holder:',
+      \ '    def __init__(self) -> None:',
+      \ '        self._items: list[T] = []',
+      \ '        self.name: str',
+      \ '        obj.nested.attr: int = 0',
       \ ])
 setlocal filetype=python
 syntax sync fromstart
@@ -174,6 +180,12 @@ call s:AssertGroup(49, s:ColOf(49, 'param'), 'pythonComment', 'param annot trail
 
 " Docstring after blank line following header colon (skipempty + skipnl)
 call s:AssertGroup(55, s:ColOf(55, 'Docstring'), 'pythonDocstring', 'docstring after blank line')
+
+" Dotted attribute statement annotations (self._items: list[T], etc.)
+call s:AssertGroup(60, s:ColOf(60, 'list'), 'pythonPrimitiveType', 'self._items: list')
+call s:AssertGroup(60, s:ColOf(60, 'T'), 'pythonTypeName', 'self._items: list[T]')
+call s:AssertGroup(61, s:ColOf(61, 'str'), 'pythonPrimitiveType', 'self.name: str')
+call s:AssertGroup(62, s:ColOf(62, 'int'), 'pythonPrimitiveType', 'obj.nested.attr: int')
 
 if empty(s:failures)
   echo printf('PASS: %d assertions', s:passed)

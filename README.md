@@ -91,6 +91,7 @@ def process(data: bytes, count: int = 10) -> None:
 ```python
 users: list[User] = []
 config: Final[dict[str, Any]] = {}
+self._items: list[T] = []   # dotted attribute targets
 ```
 
 ### Generic Types

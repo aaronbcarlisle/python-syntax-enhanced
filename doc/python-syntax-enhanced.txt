@@ -105,7 +105,8 @@ Type highlighting applies only inside annotation regions:
 
     - Parameter lists after def / async def (nested () allowed for defaults)
     - Return types from `->` through the header `:`
-    - Statement annotations `name: Type` (control keywords excluded)
+    - Statement annotations `name: Type` and dotted attrs `self._items: Type`
+      (control keywords excluded)
     - Class bases `class Foo(Bar, Generic[T])`
     - PEP 695 type parameters and `type` aliases
 

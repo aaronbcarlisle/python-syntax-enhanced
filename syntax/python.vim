@@ -229,11 +229,11 @@ if s:type_annotations
         \ skipwhite skipnl
 
   " -------------------------------------------------------------------------
-  " Statement annotations: name: Type [= ...]
+  " Statement annotations: name: Type [= ...] and attr targets (self._items: T)
   " Exclude control-flow keywords
   " -------------------------------------------------------------------------
   syn match   pythonAnnotatedAssign
-        \ "^\s*\%(\%(\%(async\s\+\)\=def\|class\|if\|elif\|else\|while\|for\|with\|try\|except\|match\|case\|type\|return\|yield\|assert\|del\|global\|nonlocal\|import\|from\|raise\|pass\|break\|continue\|await\)\>\)\@!\zs\h\w*\%(\s*,\s*\h\w*\)*\s*\ze:"
+        \ "^\s*\%(\%(\%(async\s\+\)\=def\|class\|if\|elif\|else\|while\|for\|with\|try\|except\|match\|case\|type\|return\|yield\|assert\|del\|global\|nonlocal\|import\|from\|raise\|pass\|break\|continue\|await\)\>\)\@!\zs\h\w*\%(\.\h\w*\)*\%(\s*,\s*\h\w*\%(\.\h\w*\)*\)*\s*\ze:"
         \ nextgroup=pythonStmtAnnotation
         \ skipwhite
 
