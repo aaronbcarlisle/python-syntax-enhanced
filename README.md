@@ -77,9 +77,9 @@ Run `:helptags ALL` once afterwards to enable `:help python-syntax-enhanced`.
 
 ### Compatibility
 
-Tested in CI on Vim 9.2 (Linux, macOS, Windows) and Neovim 0.12, and locally
-with Vim 9.1. It replaces Vim's built-in `syntax/python.vim`, so disable other
-Python syntax plugins (see [Troubleshooting](#troubleshooting)).
+Tested in CI on Vim 9.1 (Linux), Vim 9.2 (macOS, Windows) and Neovim 0.12.
+It replaces Vim's built-in `syntax/python.vim`, so disable other Python syntax
+plugins (see [Troubleshooting](#troubleshooting)).
 
 In Neovim this is a regular syntax file: it applies when Python is highlighted
 by the syntax engine (Neovim's default). If Tree-sitter highlighting is enabled
