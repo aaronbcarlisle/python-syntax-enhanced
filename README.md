@@ -31,9 +31,13 @@ parameters and `type` aliases.
 
 ## Colors
 
-By default the plugin sets these colors (and re-applies them on `:colorscheme`).
-With `let g:python_enhanced_colors = 0` every group is only linked to a
-standard group (`Type`, `Operator`, `String`, ...), so your colorscheme decides.
+By default every group is linked to a standard group (`Type`, `Operator`,
+`String`, ...), so your colorscheme decides the colors. The screenshot above
+uses the plugin's own palette, which you can turn on with:
+
+```vim
+let g:python_enhanced_colors = 1
+```
 
 | Element | Palette color | Highlight group |
 |---------|---------------|-----------------|
@@ -103,7 +107,7 @@ let g:python_highlight_exceptions = 1         " Exceptions (default: 1)
 let g:python_highlight_string_formatting = 1  " String formatting (default: 1)
 let g:python_highlight_doctests = 1           " Doctests (default: 1)
 let g:python_highlight_space_errors = 0       " Space errors (default: 0)
-let g:python_enhanced_colors = 1              " Built-in palette (default: 1; 0 = hi def link only)
+let g:python_enhanced_colors = 1              " Built-in palette (default: 0)
 ```
 
 For large files:
@@ -111,65 +115,20 @@ For large files:
 let g:python_slow_sync = 1                    " syntax sync fromstart
 ```
 
-## Type Annotations Supported
+## What counts as a type
 
-### Return Types
+Type colors apply inside these positions only; everywhere else the same names
+keep their normal highlighting:
+
 ```python
-def greet(name: str) -> str:
-    return f"Hello, {name}"
-```
+def find[T](items: list[T], key: Callable[[T], str] | None = None) -> T | None: ...
 
-### Parameter Annotations
-```python
-def process(data: bytes, count: int = 10) -> None:
-    pass
-```
+class Stack(Generic[T], Protocol): ...
 
-### Variable Annotations
-```python
-users: list[User] = []
-config: Final[dict[str, Any]] = {}
-self._items: list[T] = []   # dotted attribute targets
-```
-
-### Generic Types
-```python
-from typing import List, Dict, Optional, Callable
-
-def get_users() -> List[Dict[str, Any]]: ...
-def find(id: int) -> Optional[User]: ...
-def apply(func: Callable[[int], str]) -> None: ...
-```
-
-### Union Types (Python 3.10+)
-```python
-def parse(value: str | int | None) -> dict:
-    pass
-```
-
-### TypeVar & Generic Classes
-```python
-from typing import TypeVar, Generic
-
-T = TypeVar('T')
-
-class Stack(Generic[T]):
-    def push(self, item: T) -> None: ...
-    def pop(self) -> T: ...
-```
-
-### Protocol Classes
-```python
-from typing import Protocol, Self
-
-class Comparable(Protocol):
-    def __lt__(self, other: Self) -> bool: ...
-```
-
-### Type Aliases (Python 3.12+)
-```python
-type Point = tuple[int, int]
-type Vector[T] = list[T]
+users: dict[str, "User"] = {}
+self._items: list[T] = []
+type Pair[K] = tuple[K, K]
+x = []  # type: list[int]
 ```
 
 ## Customizing Colors

@@ -1,6 +1,8 @@
 " Vim syntax file
 " Language:     Python (Enhanced with Type Annotations)
-" Maintainer:   Aaron Carlisle / ABC-Terminal
+" Maintainer:   Aaron Carlisle
+" Based on:     Vim's syntax/python.vim by Zvezdan Petkovic, Neil Schemenauer
+"               and Dmitry Vasiliev
 " Last Change:  2026 Sep 26
 " Version:      1.1.0
 "
@@ -21,7 +23,7 @@
 "   let g:python_highlight_doctests = 1
 "   let g:python_highlight_space_errors = 0
 "   let g:python_slow_sync = 0
-"   let g:python_enhanced_colors = 1   " 0 = hi def link only
+"   let g:python_enhanced_colors = 0   " 1 = built-in palette
 
 if exists("b:current_syntax")
   finish
@@ -34,25 +36,17 @@ set cpo&vim
 " Configuration
 " ============================================================================
 
-if get(g:, 'python_enhanced_highlight_all', 0) || get(g:, 'python_highlight_all', 0)
-  let g:python_highlight_type_annotations = 1
-  let g:python_highlight_operators = 1
-  let g:python_highlight_func_calls = 1
-  let g:python_highlight_class_vars = 1
-  let g:python_highlight_builtins = 1
-  let g:python_highlight_exceptions = 1
-  let g:python_highlight_string_formatting = 1
-  let g:python_highlight_doctests = 1
-endif
+" highlight_all turns on every option except space errors
+let s:all = get(g:, 'python_enhanced_highlight_all', 0) || get(g:, 'python_highlight_all', 0)
 
-let s:type_annotations = get(g:, 'python_highlight_type_annotations', 1)
-let s:operators = get(g:, 'python_highlight_operators', 1)
-let s:func_calls = get(g:, 'python_highlight_func_calls', 0)
-let s:class_vars = get(g:, 'python_highlight_class_vars', 1)
-let s:builtins = get(g:, 'python_highlight_builtins', 1)
-let s:exceptions = get(g:, 'python_highlight_exceptions', 1)
-let s:string_fmt = get(g:, 'python_highlight_string_formatting', 1)
-let s:doctests = get(g:, 'python_highlight_doctests', 1)
+let s:type_annotations = s:all || get(g:, 'python_highlight_type_annotations', 1)
+let s:operators = s:all || get(g:, 'python_highlight_operators', 1)
+let s:func_calls = s:all || get(g:, 'python_highlight_func_calls', 0)
+let s:class_vars = s:all || get(g:, 'python_highlight_class_vars', 1)
+let s:builtins = s:all || get(g:, 'python_highlight_builtins', 1)
+let s:exceptions = s:all || get(g:, 'python_highlight_exceptions', 1)
+let s:string_fmt = s:all || get(g:, 'python_highlight_string_formatting', 1)
+let s:doctests = s:all || get(g:, 'python_highlight_doctests', 1)
 let s:space_errors = get(g:, 'python_highlight_space_errors', 0)
 let s:slow_sync = get(g:, 'python_slow_sync', 0)
 

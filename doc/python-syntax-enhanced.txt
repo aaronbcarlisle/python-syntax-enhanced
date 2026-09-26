@@ -3,7 +3,7 @@
                     PYTHON SYNTAX ENHANCED
                     ======================
 
-Author:  Aaron Carlisle / ABC-Terminal
+Author:  Aaron Carlisle
 License: MIT
 Version: 1.1.0
 
@@ -88,10 +88,11 @@ Or configure individually:~
     let g:python_highlight_string_formatting = 1  " String formatting (default: 1)
     let g:python_highlight_doctests = 1           " Doctests (default: 1)
     let g:python_highlight_space_errors = 0       " Space errors (default: 0)
-    let g:python_enhanced_colors = 1              " Palette on load/ColorScheme
+    let g:python_enhanced_colors = 0              " Built-in palette (default: 0)
 <
-Set `g:python_enhanced_colors` to 0 to use only |:hi-default| links so a
-colorscheme owns every group.
+By default every group is linked to a standard group (|:hi-default|), so your
+colorscheme decides the colors. Set `g:python_enhanced_colors` to 1 for the
+plugin's own palette, applied on load and again after every |:colorscheme|.
 
 For large files with complex nesting:~
 >
@@ -199,7 +200,7 @@ Core Groups:~
 
 Customizing Colors:~
 
-Add to your vimrc after colorscheme (or set g:python_enhanced_colors = 0):
+Add to your vimrc after your colorscheme:
 >
     hi pythonTypingType     ctermfg=Cyan guifg=#56B6C2
     hi pythonPrimitiveType  ctermfg=Yellow guifg=#E5C07B
@@ -265,7 +266,8 @@ Manual syntax resync:~
     - Docstrings via nextgroup after header colon (skipnl/skipempty)
     - Comments allowed inside type regions so trailing # notes are not types
     - except*, type statement vs type(), Annotated/TypeIs/ReadOnly/NotRequired
-    - Color palette via one function on load + ColorScheme
+    - Color palette is opt-in (g:python_enhanced_colors = 1); by default
+      the colorscheme decides every color
     - ftplugin no longer forces foldmethod; sync via g:python_slow_sync
     - :PythonSyntaxEnableAll reloads current buffer only
     - Calls, dicts and lambdas in parameter defaults no longer break the
@@ -273,6 +275,8 @@ Manual syntax resync:~
     - `# type: ignore` stays a comment
     - Not loaded under :syntax off / manual or Neovim Tree-sitter
     - Removed ftplugin/python.vim, which had no effect
+    - g:python_enhanced_highlight_all no longer overwrites the individual
+      g:python_highlight_* variables
     - Tests (tests/run.sh) run in CI on Vim (Linux/macOS/Windows) and Neovim
 
 1.0.0 (2025-12-18)~

@@ -62,6 +62,9 @@ setlocal filetype=python
 call s:Check(s:OursActive(), 'ours active (plugin first in rtp)')
 let s:loads = s:OursSourced() - s:before
 call s:Check(s:loads == 1, 'sourced once on FileType, got ' . s:loads)
+" Palette is opt-in: by default groups keep their standard links
+call s:Check(execute('highlight pythonBuiltin') =~# 'links to Function',
+      \ 'palette off by default')
 
 " 2. $VIMRUNTIME ahead of plugin: Vim's file wins the runtime! race, so the
 "    plugin must force-load ours -- every time, not only the first time
