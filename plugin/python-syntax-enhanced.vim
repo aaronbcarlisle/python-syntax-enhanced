@@ -36,6 +36,8 @@ function! PythonSyntaxEnhancedApplyColors() abort
   hi pythonTypeUnion      ctermfg=170 guifg=#d75fd7
   " self / cls - orange
   hi pythonSelfRef        ctermfg=209 guifg=#ff875f
+  " Builtins (print, len, ...) - lavender, distinct from yellow function calls
+  hi pythonBuiltin        ctermfg=139 guifg=#b294bb
   " Docstrings - green
   hi pythonDocstring      ctermfg=71  guifg=#5faf5f
 endfunction

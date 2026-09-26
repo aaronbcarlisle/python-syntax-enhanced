@@ -32,6 +32,7 @@ Vim's built-in Python syntax and existing plugins like `vim-python/python-syntax
 | CapWords / aliases in annotations | Type link | `pythonTypeName` |
 | `->` and `\|` (union) | Magenta | `pythonReturnArrow`, `pythonTypeUnion` |
 | `self`, `cls` | Orange | `pythonSelfRef` |
+| Builtins in code (`print`, `len`, `str(...)`) | Lavender | `pythonBuiltin` |
 | Docstrings | Green | `pythonDocstring` |
 
 ## Installation

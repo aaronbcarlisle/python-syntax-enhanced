@@ -181,6 +181,19 @@ if s:type_annotations
         \ pythonTypeEllipsis,pythonTypeNone,pythonTypeString,pythonComment
 
   " -------------------------------------------------------------------------
+  " Brackets: continuation lines inside (...) [...] {...} are expressions, so
+  " `key: value` in a multi-line dict/call is never a statement annotation.
+  " Defined before the lookbehind regions below (param lists, class bases,
+  " type params) so those still win when they start at the same bracket.
+  " -------------------------------------------------------------------------
+  syn region  pythonBracketBlock start="(" end=")" transparent
+        \ contains=TOP,pythonAnnotatedAssign,pythonAnnotatedAttr
+  syn region  pythonBracketBlock start="\[" end="\]" transparent
+        \ contains=TOP,pythonAnnotatedAssign,pythonAnnotatedAttr
+  syn region  pythonBracketBlock start="{" end="}" transparent
+        \ contains=TOP,pythonAnnotatedAssign,pythonAnnotatedAttr
+
+  " -------------------------------------------------------------------------
   " PEP 695 type parameter lists: def f[T], class C[T], type A[T]
   " -------------------------------------------------------------------------
   syn region  pythonTypeParamList matchgroup=pythonTypeBracket
@@ -318,8 +331,9 @@ endif
 syn match   pythonDecorator     "@" display contained
 syn match   pythonDecoratorName "@\s*\h\%(\w\|\.\)*" display contains=pythonDecorator
 
+" Lookbehind: consuming a ) or ] here would hide it from pythonBracketBlock's end
 syn match   pythonMatrixMultiply
-      \ "\%(\w\|[])]\)\s*@"
+      \ "\%(\w\|[])]\)\@1<=\s*@"
       \ contains=TOP,pythonDecoratorName
       \ transparent
 

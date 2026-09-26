@@ -136,6 +136,18 @@ call setline(1, [
       \ '    def __init__(self) -> None:',
       \ '        self.name: str',
       \ '        obj.nested.attr: int = 0',
+      \ '',
+      \ 'd = {',
+      \ '    key: value,',
+      \ '    other: str',
+      \ '}',
+      \ 'after_dict: int = 1',
+      \ 'x = (a) @ b',
+      \ 'after_matmul: int = 2',
+      \ 'rows = [',
+      \ '    ("a)", 1),  # ] in a comment',
+      \ ']',
+      \ 'after_list: int = 3',
       \ ])
 setlocal filetype=python
 syntax sync fromstart
@@ -238,6 +250,23 @@ call s:AssertGroup(81, s:ColOf(81, 'Plain'), 'pythonDocstring', 'plain class doc
 call s:AssertGroup(85, s:ColOf(85, 'str'), 'pythonPrimitiveType', 'self.name: str')
 call s:AssertGroup(86, s:ColOf(86, 'int'), 'pythonPrimitiveType', 'obj.nested.attr: int')
 call s:AssertGroup(86, s:ColOf(86, '0'), 'pythonNumber', 'obj.nested.attr value')
+
+" name: value continuation lines inside brackets are not annotations
+call s:AssertNotGroup(89, s:ColOf(89, 'value'), 'pythonTypeName', 'dict entry value not type')
+call s:AssertGroup(90, s:ColOf(90, 'str'), 'pythonBuiltin', 'dict entry str stays builtin')
+" ...and the bracket closes: annotations work again afterwards
+call s:AssertGroup(92, s:ColOf(92, 'int'), 'pythonPrimitiveType', 'annotation after dict')
+call s:AssertGroup(94, s:ColOf(94, 'int'), 'pythonPrimitiveType', 'annotation after (a) @ b')
+call s:AssertGroup(98, s:ColOf(98, 'int'), 'pythonPrimitiveType', 'annotation after list w/ ) in str')
+
+" Palette: builtins get their own color, not the Function link
+call s:AssertGroup(4, s:ColOf(4, 'list'), 'pythonBuiltin', 'list() call for palette check')
+if synIDattr(synIDtrans(hlID('pythonBuiltin')), 'fg', 'cterm') !=# '139'
+  call add(s:failures, 'FAIL pythonBuiltin palette color: got '
+        \ . synIDattr(synIDtrans(hlID('pythonBuiltin')), 'fg', 'cterm'))
+else
+  let s:passed += 1
+endif
 
 if empty(s:failures)
   echo printf('PASS: %d assertions', s:passed)
