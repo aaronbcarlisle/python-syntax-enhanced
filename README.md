@@ -183,6 +183,7 @@ tests/test_highlighting.py
 Automated synID checks (recommended):
 ```bash
 vim -Nu NONE -S tests/test_syntax.vim
+vim -Nu NONE -S tests/test_loading.vim
 ```
 
 ## License

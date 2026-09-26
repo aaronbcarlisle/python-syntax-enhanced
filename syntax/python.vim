@@ -604,7 +604,9 @@ if s:slow_sync
   syn sync fromstart
 else
   " Param/return regions use lookbehind, so syncing at def/class is safe.
-  syn sync match pythonSync grouphere NONE "^\%(def\|class\|async\s\+def\)\s\+\h\w*"
+  " Require ( : or [ after the name so prose like "class Foo manages..." at
+  " column 0 inside a long string is not taken as a top-level sync point.
+  syn sync match pythonSync grouphere NONE "^\%(def\|class\|async\s\+def\)\s\+\h\w*\s*[(:\[]"
   syn sync minlines=100
 endif
 

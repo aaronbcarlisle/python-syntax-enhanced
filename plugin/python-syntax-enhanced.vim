@@ -44,24 +44,32 @@ endfunction
 " Force-load our syntax file for Python buffers
 " ---------------------------------------------------------------------------
 
-function! s:LoadSyntax() abort
-  if get(b:, 'python_syntax_enhanced', 0)
+" True when the buffer's current syntax came from our syntax/python.vim.
+" Probes a group only we define rather than a buffer flag, which would go
+" stale when Vim's own python syntax is loaded again later.
+function! s:OursLoaded() abort
+  return get(b:, 'current_syntax', '') ==# 'python'
+        \ && execute('silent! syntax list pythonDefColon') =~# 'pythonDefColon'
+endfunction
+
+" Normally Vim's FileType/Syntax machinery has already sourced our file by
+" the time this runs; only take over when another python syntax won.
+function! s:LoadSyntax(force) abort
+  if !a:force && s:OursLoaded()
     return
   endif
 
   syntax clear
   unlet! b:current_syntax
 
+  " The syntax file applies the palette itself
   execute 'source' fnameescape(s:plugin_root . '/syntax/python.vim')
-  let b:python_syntax_enhanced = 1
-  call PythonSyntaxEnhancedApplyColors()
 endfunction
 
 function! s:EnableAll() abort
   let g:python_enhanced_highlight_all = 1
   if &filetype ==# 'python'
-    let b:python_syntax_enhanced = 0
-    call s:LoadSyntax()
+    call s:LoadSyntax(1)
   endif
 endfunction
 
@@ -88,7 +96,7 @@ command! PythonSyntaxInfo call s:ShowInfo()
 
 augroup python_syntax_enhanced
   autocmd!
-  autocmd FileType python call s:LoadSyntax()
+  autocmd FileType python call s:LoadSyntax(0)
   autocmd ColorScheme * call PythonSyntaxEnhancedApplyColors()
 augroup END
 
