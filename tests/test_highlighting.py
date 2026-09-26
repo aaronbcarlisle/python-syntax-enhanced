@@ -31,11 +31,11 @@ nothing: None = None
 
 
 # =============================================================================
-# Return Type Arrows (The Main Fix!)
+# Return Type Arrows
 # =============================================================================
 
 def greet(name: str) -> str:
-    """The -> should be highlighted as Operator, str as Type."""
+    """-> is pythonReturnArrow, str is pythonPrimitiveType."""
     return f"Hello, {name}"
 
 

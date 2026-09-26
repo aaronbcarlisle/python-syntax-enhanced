@@ -1,7 +1,7 @@
 " plugin/python-syntax-enhanced.vim - Plugin initialization
 "
-" Python Syntax Enhanced - IDE-level Python syntax highlighting for Vim
-" Maintainer: Aaron Carlisle / ABC-Terminal
+" Python Syntax Enhanced - Python syntax highlighting with type annotations
+" Maintainer: Aaron Carlisle
 " Version: 1.1.0
 
 if exists('g:loaded_python_syntax_enhanced')
@@ -16,11 +16,11 @@ set cpo&vim
 let s:plugin_root = expand('<sfile>:p:h:h')
 
 " ---------------------------------------------------------------------------
-" Color palette (survives :colorscheme; optional opt-out)
+" Optional color palette (off by default; survives :colorscheme)
 " ---------------------------------------------------------------------------
 
 function! PythonSyntaxEnhancedApplyColors() abort
-  if !get(g:, 'python_enhanced_colors', 1)
+  if !get(g:, 'python_enhanced_colors', 0)
     return
   endif
 
@@ -34,8 +34,6 @@ function! PythonSyntaxEnhancedApplyColors() abort
   hi pythonReturnArrow    ctermfg=170 guifg=#d75fd7
   " Union operator - same as arrow
   hi pythonTypeUnion      ctermfg=170 guifg=#d75fd7
-  " self / cls - orange
-  hi pythonSelfRef        ctermfg=209 guifg=#ff875f
   " Builtins (print, len, ...) - lavender, distinct from yellow function calls
   hi pythonBuiltin        ctermfg=139 guifg=#b294bb
   " Docstrings - green
@@ -56,8 +54,10 @@ endfunction
 
 " Normally Vim's FileType/Syntax machinery has already sourced our file by
 " the time this runs; only take over when another python syntax won.
+" 'syntax' is not "python" under :syntax off / :syntax manual, or after
+" Neovim's Tree-sitter highlighter cleared it: leave those buffers alone.
 function! s:LoadSyntax(force) abort
-  if !a:force && s:OursLoaded()
+  if !a:force && (&l:syntax !=# 'python' || s:OursLoaded())
     return
   endif
 
@@ -75,20 +75,27 @@ function! s:EnableAll() abort
   endif
 endfunction
 
+" ON/OFF for g:python_highlight_{name}, as syntax/python.vim reads it
+function! s:State(name, default) abort
+  let l:all = a:name !=# 'space_errors' && (get(g:, 'python_enhanced_highlight_all', 0)
+        \ || get(g:, 'python_highlight_all', 0))
+  return l:all || get(g:, 'python_highlight_' . a:name, a:default) ? 'ON' : 'OFF'
+endfunction
+
 function! s:ShowInfo() abort
   echo "Python Syntax Enhanced v1.1.0"
   echo ""
   echo "Active features:"
-  echo "  Type annotations: " . (get(g:, 'python_highlight_type_annotations', 1) ? 'ON' : 'OFF')
-  echo "  Operators:        " . (get(g:, 'python_highlight_operators', 1) ? 'ON' : 'OFF')
-  echo "  Function calls:   " . (get(g:, 'python_highlight_func_calls', 0) ? 'ON' : 'OFF')
-  echo "  Class vars:       " . (get(g:, 'python_highlight_class_vars', 1) ? 'ON' : 'OFF')
-  echo "  Builtins:         " . (get(g:, 'python_highlight_builtins', 1) ? 'ON' : 'OFF')
-  echo "  Exceptions:       " . (get(g:, 'python_highlight_exceptions', 1) ? 'ON' : 'OFF')
-  echo "  String format:    " . (get(g:, 'python_highlight_string_formatting', 1) ? 'ON' : 'OFF')
-  echo "  Doctests:         " . (get(g:, 'python_highlight_doctests', 1) ? 'ON' : 'OFF')
-  echo "  Space errors:     " . (get(g:, 'python_highlight_space_errors', 0) ? 'ON' : 'OFF')
-  echo "  Enhanced colors:  " . (get(g:, 'python_enhanced_colors', 1) ? 'ON' : 'OFF')
+  echo "  Type annotations: " . s:State('type_annotations', 1)
+  echo "  Operators:        " . s:State('operators', 1)
+  echo "  Function calls:   " . s:State('func_calls', 0)
+  echo "  Class vars:       " . s:State('class_vars', 1)
+  echo "  Builtins:         " . s:State('builtins', 1)
+  echo "  Exceptions:       " . s:State('exceptions', 1)
+  echo "  String format:    " . s:State('string_formatting', 1)
+  echo "  Doctests:         " . s:State('doctests', 1)
+  echo "  Space errors:     " . s:State('space_errors', 0)
+  echo "  Enhanced colors:  " . (get(g:, 'python_enhanced_colors', 0) ? 'ON' : 'OFF')
   echo ""
   echo "Use :PythonSyntaxEnableAll to enable all features"
 endfunction

@@ -17,6 +17,12 @@ let s:prof = tempname()
 execute 'profile start' fnameescape(s:prof)
 profile file */syntax/python.vim
 
+" Stands in for a user FileType autocmd that starts Neovim's Tree-sitter
+" highlighter, which clears 'syntax'. Defined before the plugin's, like one
+" in a vimrc/init.lua; only active for case 3 below.
+let s:clear_syntax = 0
+autocmd FileType python if s:clear_syntax | setlocal syntax= | endif
+
 execute 'source' fnameescape(s:root . '/plugin/python-syntax-enhanced.vim')
 
 let s:failures = []
@@ -56,6 +62,9 @@ setlocal filetype=python
 call s:Check(s:OursActive(), 'ours active (plugin first in rtp)')
 let s:loads = s:OursSourced() - s:before
 call s:Check(s:loads == 1, 'sourced once on FileType, got ' . s:loads)
+" Palette is opt-in: by default groups keep their standard links
+call s:Check(execute('highlight pythonBuiltin') =~# 'links to Function',
+      \ 'palette off by default')
 
 " 2. $VIMRUNTIME ahead of plugin: Vim's file wins the runtime! race, so the
 "    plugin must force-load ours -- every time, not only the first time
@@ -66,6 +75,19 @@ call s:Check(s:OursActive(), 'ours force-loaded (vimruntime first)')
 setlocal filetype=
 setlocal filetype=python
 call s:Check(s:OursActive(), 'ours force-loaded again after reload')
+
+" 3. A buffer whose 'syntax' was cleared first (Tree-sitter) is left alone
+let s:clear_syntax = 1
+enew
+setlocal filetype=python
+call s:Check(!s:OursActive(), 'not loaded when syntax was cleared')
+let s:clear_syntax = 0
+
+" 4. :syntax off is respected
+syntax off
+enew
+setlocal filetype=python
+call s:Check(!s:OursActive(), 'not loaded after :syntax off')
 
 call delete(s:prof)
 

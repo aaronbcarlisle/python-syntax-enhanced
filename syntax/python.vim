@@ -1,6 +1,8 @@
 " Vim syntax file
 " Language:     Python (Enhanced with Type Annotations)
-" Maintainer:   Aaron Carlisle / ABC-Terminal
+" Maintainer:   Aaron Carlisle
+" Based on:     Vim's syntax/python.vim by Zvezdan Petkovic, Neil Schemenauer
+"               and Dmitry Vasiliev
 " Last Change:  2026 Sep 26
 " Version:      1.1.0
 "
@@ -21,7 +23,7 @@
 "   let g:python_highlight_doctests = 1
 "   let g:python_highlight_space_errors = 0
 "   let g:python_slow_sync = 0
-"   let g:python_enhanced_colors = 1   " 0 = hi def link only
+"   let g:python_enhanced_colors = 0   " 1 = built-in palette
 
 if exists("b:current_syntax")
   finish
@@ -34,25 +36,17 @@ set cpo&vim
 " Configuration
 " ============================================================================
 
-if get(g:, 'python_enhanced_highlight_all', 0) || get(g:, 'python_highlight_all', 0)
-  let g:python_highlight_type_annotations = 1
-  let g:python_highlight_operators = 1
-  let g:python_highlight_func_calls = 1
-  let g:python_highlight_class_vars = 1
-  let g:python_highlight_builtins = 1
-  let g:python_highlight_exceptions = 1
-  let g:python_highlight_string_formatting = 1
-  let g:python_highlight_doctests = 1
-endif
+" highlight_all turns on every option except space errors
+let s:all = get(g:, 'python_enhanced_highlight_all', 0) || get(g:, 'python_highlight_all', 0)
 
-let s:type_annotations = get(g:, 'python_highlight_type_annotations', 1)
-let s:operators = get(g:, 'python_highlight_operators', 1)
-let s:func_calls = get(g:, 'python_highlight_func_calls', 0)
-let s:class_vars = get(g:, 'python_highlight_class_vars', 1)
-let s:builtins = get(g:, 'python_highlight_builtins', 1)
-let s:exceptions = get(g:, 'python_highlight_exceptions', 1)
-let s:string_fmt = get(g:, 'python_highlight_string_formatting', 1)
-let s:doctests = get(g:, 'python_highlight_doctests', 1)
+let s:type_annotations = s:all || get(g:, 'python_highlight_type_annotations', 1)
+let s:operators = s:all || get(g:, 'python_highlight_operators', 1)
+let s:func_calls = s:all || get(g:, 'python_highlight_func_calls', 0)
+let s:class_vars = s:all || get(g:, 'python_highlight_class_vars', 1)
+let s:builtins = s:all || get(g:, 'python_highlight_builtins', 1)
+let s:exceptions = s:all || get(g:, 'python_highlight_exceptions', 1)
+let s:string_fmt = s:all || get(g:, 'python_highlight_string_formatting', 1)
+let s:doctests = s:all || get(g:, 'python_highlight_doctests', 1)
 let s:space_errors = get(g:, 'python_highlight_space_errors', 0)
 let s:slow_sync = get(g:, 'python_slow_sync', 0)
 
@@ -207,15 +201,16 @@ if s:type_annotations
 
   " -------------------------------------------------------------------------
   " Parameter lists after def / async def (lookbehind so sync cannot drop them)
-  " Nested () for defaults via self-containment.
+  " Brackets in defaults (x=f(1, 2), x={"k": v}) are pythonBracketBlock, so
+  " their ) , and : cannot end the list or start an annotation.
   " -------------------------------------------------------------------------
   syn region  pythonParamList matchgroup=pythonParams
         \ start="\%(\%(async\s\+\)\=def\s\+\h\w*\%(\s*\[[^[\]]*\]\)\=\s*\)\@<=("
         \ end=")"
-        \ contains=pythonParamList,pythonParamAnnotation,pythonClassVar,pythonSelfRef,
-        \          pythonBuiltin,pythonNumber,pythonString,pythonRawString,pythonFString,
-        \          pythonBytes,pythonOperatorSymbol,pythonComment,pythonEllipsis,
-        \          pythonDecoratorName,@Spell
+        \ contains=pythonBracketBlock,pythonParamAnnotation,pythonParamLambda,
+        \          pythonClassVar,pythonBuiltin,pythonNumber,pythonString,
+        \          pythonRawString,pythonFString,pythonBytes,pythonOperatorSymbol,
+        \          pythonComment,pythonEllipsis,@Spell
         \ nextgroup=pythonReturnType,pythonDefColon
         \ skipwhite skipnl
 
@@ -224,6 +219,11 @@ if s:type_annotations
   syn region  pythonParamAnnotation matchgroup=pythonTypeColon
         \ start=":" end="\ze\%(\s*\%(=\|,\|)\)\)" contained
         \ contains=@pythonTypeExpr
+
+  " key=lambda x: ...  -- the lambda's colon is not an annotation
+  syn region  pythonParamLambda matchgroup=pythonStatement
+        \ start="\<lambda\>" matchgroup=NONE end=":" contained oneline
+        \ contains=pythonBracketBlock,pythonNumber,pythonString,pythonOperatorSymbol
 
   " -------------------------------------------------------------------------
   " Return type: -> through header : (not contained — any -> … : is a return type)
@@ -278,9 +278,10 @@ if s:type_annotations
         \ oneline
 
   " -------------------------------------------------------------------------
-  " Type comments: # type: ...
+  " Type comments: # type: ...  (inside pythonComment; not "# type: ignore")
   " -------------------------------------------------------------------------
-  syn match   pythonTypeComment "#\s*type:\s*.*$" contains=@pythonTypeExpr
+  syn match   pythonTypeComment "\%(#\s*type:\s*\)\@<=\%(ignore\>\)\@!\S.*$"
+        \ contained contains=@pythonTypeExpr
 
 endif
 
@@ -291,28 +292,26 @@ syn cluster pythonTypeInternal contains=
       \ pythonTypingType,pythonPrimitiveType,pythonTypeNone,pythonTypeEllipsis,
       \ pythonTypeUnion,pythonTypeComma,pythonTypeDotted,pythonTypeName,
       \ pythonTypeString,pythonTypeBracket,pythonTypeParen,pythonTypeParamStar,
-      \ pythonParamAnnotation,pythonStmtAnnotation,pythonTypeAliasEq,
-      \ pythonTypeAliasValue,pythonDefColon,pythonDefComment,pythonDocstring
+      \ pythonParamAnnotation,pythonParamLambda,pythonStmtAnnotation,
+      \ pythonTypeAliasEq,pythonTypeAliasValue,pythonTypeComment,
+      \ pythonDefColon,pythonDefComment,pythonDocstring
 
 " ============================================================================
 " Class Variables (self, cls, mcs)
 " ============================================================================
 
 if s:class_vars
-  syn keyword pythonSelfRef     self cls mcs
   syn keyword pythonClassVar    self cls mcs
 endif
 
 " ============================================================================
-" Operators — one match, longest alternative first; no -> ; | is bitwise here
+" Operators — | is bitwise here (union only inside type regions)
 " ============================================================================
 
 if s:operators
-  " Longest alternatives first. Literal ~ must be \~ (bare ~ is last-substitute).
-  " & and | are literal in magic mode; \| separates alternatives.
-  syn match pythonOperatorSymbol
-        \ "\%(<<=\|>>=\|\*\*=\|\/\/=\|:=\|+=\|-=\|\*=\|\/=\|%=\|&=\||=\|\^=\|@=\|==\|!=\|<>\|<=\|>=\|\/\/\|\*\*\|<<\|>>\|+\|-\|\*\|@\|\/\|%\|<\|>\|=\|\~\|&\||\|\^\)"
-        \ display
+  " One character at a time: runs like **= or //= look the same as a single
+  " match, and a character class is much cheaper than a long alternation.
+  syn match pythonOperatorSymbol "[-+*/%@<>=~&|^]\|!=\|:=" display
 endif
 
 " ============================================================================
@@ -353,7 +352,7 @@ syn cluster pythonExpression contains=
       \ pythonAttribute,pythonFunctionCall,
       \ pythonBuiltin,pythonNumber,pythonNone,pythonEllipsis,
       \ pythonString,pythonRawString,pythonFString,pythonBytes,
-      \ pythonOperatorSymbol,pythonOperator,pythonSelfRef,pythonClassVar,
+      \ pythonOperatorSymbol,pythonOperator,pythonClassVar,
       \ pythonComment,pythonDecoratorName,pythonExceptions,
       \ pythonFStringFieldSkip,pythonFStringDebug
 
@@ -683,7 +682,6 @@ endif
 
 if s:class_vars
   hi def link pythonClassVar        Identifier
-  hi def link pythonSelfRef         Identifier
 endif
 
 if s:operators
@@ -709,12 +707,10 @@ if s:type_annotations
   hi def link pythonTypeString      String
   hi def link pythonTypeComment     SpecialComment
   hi def link pythonTypeParamStar   Operator
-  hi def link pythonTypeAnnotation  Type
   hi def link pythonReturnType      Type
   hi def link pythonParamAnnotation Type
   hi def link pythonStmtAnnotation  Type
   hi def link pythonTypeAliasValue  Type
-  hi def link pythonTypeVar         Identifier
 endif
 
 if s:doctests
