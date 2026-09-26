@@ -1,4 +1,3 @@
-<img width="2530" height="1216" alt="before_after" src="" />
 # Python Syntax Enhanced
 
 [![Tests](https://github.com/aaronbcarlisle/python-syntax-enhanced/actions/workflows/test.yml/badge.svg)](https://github.com/aaronbcarlisle/python-syntax-enhanced/actions/workflows/test.yml)
