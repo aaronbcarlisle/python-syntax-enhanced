@@ -79,6 +79,7 @@ call setline(1, [
       \ 'type Vector[T] = list[T]',
       \ '',
       \ 'class Stack(Generic[T]):',
+      \ '    """Class docstring after header colon."""',
       \ '    pass',
       \ '',
       \ 'c = 1 & 2 | 3 ^ 4',
@@ -95,6 +96,16 @@ call setline(1, [
       \ '',
       \ 'from typing import Annotated, TypeIs, ReadOnly, NotRequired',
       \ 'flag: Annotated[int, "meta"] = 1',
+      \ '',
+      \ 'plain: int  # note stays a comment',
+      \ 'def commented(x: int  # param note',
+      \ '    ) -> str:  # return note unused',
+      \ '    return ""',
+      \ '',
+      \ 'def blank_then_doc():',
+      \ '',
+      \ '    """Docstring after blank line (skipempty+skipnl)."""',
+      \ '    pass',
       \ ])
 setlocal filetype=python
 syntax sync fromstart
@@ -138,21 +149,31 @@ call s:AssertGroup(26, s:ColOf(26, 'type'), 'pythonStatement', 'type statement k
 call s:AssertGroup(26, s:ColOf(26, 'tuple'), 'pythonPrimitiveType', 'type alias RHS')
 call s:AssertGroup(27, s:ColOf(27, 'list'), 'pythonPrimitiveType', 'type Vector RHS')
 
-" Class bases
+" Class bases + class docstring on next line (skipnl)
 call s:AssertGroup(29, s:ColOf(29, 'Generic'), 'pythonTypingType', 'class base Generic')
+call s:AssertGroup(30, s:ColOf(30, 'Class'), 'pythonDocstring', 'class docstring skipnl')
 
 " Bitwise | is NOT type union
-call s:AssertNotGroup(32, s:ColOf(32, '|'), 'pythonTypeUnion', 'bitwise |')
-call s:AssertGroup(32, s:ColOf(32, '|'), 'pythonOperatorSymbol', 'bitwise | op')
+call s:AssertNotGroup(33, s:ColOf(33, '|'), 'pythonTypeUnion', 'bitwise |')
+call s:AssertGroup(33, s:ColOf(33, '|'), 'pythonOperatorSymbol', 'bitwise | op')
 
 " except*
-call s:AssertGroup(36, s:ColOf(36, 'except*'), 'pythonException', 'except*')
+call s:AssertGroup(37, s:ColOf(37, 'except*'), 'pythonException', 'except*')
 
 " type() call is builtin
-call s:AssertGroup(39, s:ColOf(39, 'type'), 'pythonBuiltin', 'type() builtin')
+call s:AssertGroup(40, s:ColOf(40, 'type'), 'pythonBuiltin', 'type() builtin')
 
 " Annotated
-call s:AssertGroup(45, s:ColOf(45, 'Annotated'), 'pythonTypingType', 'Annotated')
+call s:AssertGroup(46, s:ColOf(46, 'Annotated'), 'pythonTypingType', 'Annotated')
+
+" Trailing comments in annotations must stay comments (not pythonTypeName)
+call s:AssertGroup(48, s:ColOf(48, 'int'), 'pythonPrimitiveType', 'annot before comment')
+call s:AssertGroup(48, s:ColOf(48, 'note'), 'pythonComment', 'stmt annot trailing comment')
+call s:AssertNotGroup(48, s:ColOf(48, 'note'), 'pythonTypeName', 'comment word not type')
+call s:AssertGroup(49, s:ColOf(49, 'param'), 'pythonComment', 'param annot trailing comment')
+
+" Docstring after blank line following header colon (skipempty + skipnl)
+call s:AssertGroup(55, s:ColOf(55, 'Docstring'), 'pythonDocstring', 'docstring after blank line')
 
 if empty(s:failures)
   echo printf('PASS: %d assertions', s:passed)

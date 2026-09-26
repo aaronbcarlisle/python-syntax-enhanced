@@ -91,8 +91,9 @@ syn match   pythonTypeAlias     "\h\w*" display contained
       \ nextgroup=pythonTypeParamList,pythonTypeAliasEq skipwhite
 
 " Header colon after def/class -> docstring via nextgroup (not lookbehind)
+" skipnl: docstring is almost always on the following line after def/class :
 syn match   pythonDefColon      ":" contained
-      \ nextgroup=pythonDocstring skipwhite skipempty
+      \ nextgroup=pythonDocstring skipwhite skipempty skipnl
 
 " ============================================================================
 " Type expression cluster (only used inside annotation regions)
@@ -167,10 +168,11 @@ if s:type_annotations
         \ start="(" end=")" contained
         \ contains=@pythonTypeExpr
 
+  " Include pythonComment so trailing notes (# ...) stay comments, not type names
   syn cluster pythonTypeExpr contains=
         \ pythonPrimitiveType,pythonTypingType,pythonTypeName,pythonTypeDotted,
         \ pythonTypeUnion,pythonTypeBracket,pythonTypeParen,pythonTypeComma,
-        \ pythonTypeEllipsis,pythonTypeNone,pythonTypeString
+        \ pythonTypeEllipsis,pythonTypeNone,pythonTypeString,pythonComment
 
   " -------------------------------------------------------------------------
   " PEP 695 type parameter lists: def f[T], class C[T], type A[T]
@@ -237,7 +239,7 @@ if s:type_annotations
 
   syn region  pythonStmtAnnotation matchgroup=pythonTypeColon
         \ start=":"
-        \ end="\ze\%(\s*=\|$\)"
+        \ end="\ze\%(\s*=\|\s*#\|$\)"
         \ contained
         \ contains=@pythonTypeExpr
         \ oneline

@@ -18,7 +18,8 @@ Vim's built-in Python syntax and existing plugins like `vim-python/python-syntax
 - **Python 3.12+ type syntax** - `def func[T](x: T) -> T:`, `type Point = tuple[int, int]`
 - **Enhanced f-strings** - Including debug specifier `f"{x=}"`
 - **match/case** and **except\*** - Python 3.10+ / 3.11+
-- **Green docstrings** - Via nextgroup after the header colon (and module docstring)
+- **Green docstrings** - Via nextgroup after the header colon (`skipnl`/`skipempty`, including wrapped signatures and blank lines)
+- **Comments in annotations** - Trailing `# ...` notes stay comments, not fake type names
 - **Distinct color scheme** - Different colors for types, primitives, classes (optional)
 
 ## Color Scheme

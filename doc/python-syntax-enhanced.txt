@@ -40,7 +40,8 @@ Features:~
     - CapWords / user aliases inside annotations (`User`, `Comparable`)
     - Type comments: `# type: int`
     - Python 3.12+ type parameters and `type` aliases
-    - Docstrings via nextgroup after the header colon
+    - Docstrings via nextgroup after the header colon (skipnl/skipempty)
+    - Trailing comments inside annotations stay comments, not type names
     - Enhanced f-string support with debug specifier
     - match/case and except* (Python 3.10+ / 3.11+)
     - Operator highlighting (longest match first; `->` is never an operator)
@@ -240,7 +241,8 @@ Manual syntax resync:~
     - Force-load syntax/python.vim on FileType; remove after/syntax duplicates
     - Type expressions only in annotation regions; CapWords aliases supported
     - `|` is union only inside types; operators are one longest-first match
-    - Docstrings via nextgroup after header colon
+    - Docstrings via nextgroup after header colon (skipnl/skipempty)
+    - Comments allowed inside type regions so trailing # notes are not types
     - except*, type statement vs type(), Annotated/TypeIs/ReadOnly/NotRequired
     - Color palette via one function on load + ColorScheme
     - ftplugin no longer forces foldmethod; sync via g:python_slow_sync
