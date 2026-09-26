@@ -1,3 +1,4 @@
+<img width="2530" height="1216" alt="before_after" src="" />
 # Python Syntax Enhanced
 
 [![Tests](https://github.com/aaronbcarlisle/python-syntax-enhanced/actions/workflows/test.yml/badge.svg)](https://github.com/aaronbcarlisle/python-syntax-enhanced/actions/workflows/test.yml)
@@ -11,7 +12,7 @@ one that colors types only where they are types: parameter and return
 annotations, `x: T` and `self.attr: T`, class bases, and PEP 695 type
 parameters and `type` aliases.
 
-![Before and after: Vim's built-in Python syntax next to python-syntax-enhanced, colorscheme retrobox](https://github.com/user-attachments/assets/e3f130c2-17f7-454b-95ce-0d3ebe375438)
+![Before and after: Vim's built-in Python syntax next to python-syntax-enhanced, colorscheme retrobox](https://github.com/user-attachments/assets/fbeb9a79-df8d-4e06-a339-2d4fc1ca70ef)
 
 ## Features
 
