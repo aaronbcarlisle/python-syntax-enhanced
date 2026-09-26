@@ -11,7 +11,7 @@
 ## Required Checks
 
 ### Tests
-- [ ] This PR does **not** change `syntax/`, `plugin/` or `ftplugin/` (skip below)
+- [ ] This PR does **not** change `syntax/` or `plugin/` (skip below)
 - [ ] Added or updated assertions in `tests/test_syntax.vim` (or `tests/test_loading.vim`) that fail without the change
 - [ ] `sh tests/run.sh` passes locally
 

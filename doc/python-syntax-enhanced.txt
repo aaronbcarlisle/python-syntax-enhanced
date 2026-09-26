@@ -1,7 +1,7 @@
-*python-syntax-enhanced.txt*  IDE-level Python syntax highlighting
+*python-syntax-enhanced.txt*  Python syntax with type annotation highlighting
 
                     PYTHON SYNTAX ENHANCED
-                    =====================
+                    ======================
 
 Author:  Aaron Carlisle / ABC-Terminal
 License: MIT
@@ -17,17 +17,20 @@ CONTENTS                                    *python-syntax-enhanced-contents*
     5. Highlight Groups ............ |python-syntax-enhanced-groups|
     6. Commands .................... |python-syntax-enhanced-commands|
     7. Troubleshooting ............. |python-syntax-enhanced-trouble|
-    8. Changelog ................... |python-syntax-enhanced-changelog|
+    8. Limitations ................. |python-syntax-enhanced-limits|
+    9. Changelog ................... |python-syntax-enhanced-changelog|
 
 ==============================================================================
 1. INTRODUCTION                              *python-syntax-enhanced-intro*
 
-Python Syntax Enhanced provides IDE-level syntax highlighting for Python,
-with particular focus on type annotations that are missing or broken in
-Vim's built-in syntax and other Python syntax plugins.
+Python Syntax Enhanced replaces Vim's syntax/python.vim with one that
+highlights type annotations, which Vim's built-in Python syntax does not
+distinguish from other code.
 
-On |FileType| python the plugin clears syntax and sources its own
-syntax/python.vim by absolute path so stock runtime files cannot shadow it.
+If another python syntax file won the 'runtimepath' lookup, the plugin loads
+its own syntax/python.vim on |FileType| python instead. It does nothing when
+'syntax' is not "python" (|:syntax-off|, |:syn-manual|, or Neovim
+Tree-sitter highlighting).
 
 Features:~
     - Type expressions only inside real annotation contexts
@@ -40,11 +43,11 @@ Features:~
     - CapWords / user aliases inside annotations (`User`, `Comparable`)
     - Type comments: `# type: int`
     - Python 3.12+ type parameters and `type` aliases
-    - Docstrings via nextgroup after the header colon (skipnl/skipempty)
+    - Docstrings, including after wrapped signatures and comment lines
     - Trailing comments inside annotations stay comments, not type names
-    - Enhanced f-string support with debug specifier
+    - f-strings, including the debug specifier `f"{x=}"`
     - match/case and except* (Python 3.10+ / 3.11+)
-    - Operator highlighting (longest match first; `->` is never an operator)
+    - Operator highlighting (`->` is never an operator)
 
 ==============================================================================
 2. INSTALLATION                            *python-syntax-enhanced-install*
@@ -53,23 +56,22 @@ Using vim-plug:~
 >
     Plug 'aaronbcarlisle/python-syntax-enhanced'
 <
-Or for local installation:~
->
-    Plug '~/.vim/plugged/python-syntax-enhanced'
-<
 Using Vundle:~
 >
     Plugin 'aaronbcarlisle/python-syntax-enhanced'
 <
-Manual Installation:~
-
-Copy the plugin directory to `~/.vim/plugged/python-syntax-enhanced/` or
-`~/.vim/pack/plugins/start/python-syntax-enhanced/`.
+Using Vim packages (|packages|):~
+>
+    git clone https://github.com/aaronbcarlisle/python-syntax-enhanced.git \
+        ~/.vim/pack/plugins/start/python-syntax-enhanced
+<
+On Windows use `~/vimfiles/pack/plugins/start/`. Then run `:helptags ALL`.
 
 ==============================================================================
 3. CONFIGURATION                            *python-syntax-enhanced-config*
 
-Add these to your vimrc BEFORE `syntax on`:
+Options are read when a Python buffer's syntax is loaded; set them in your
+vimrc (after changing one, reopen the file with |:edit|).
 
 Enable all features at once:~
 >
@@ -96,7 +98,6 @@ For large files with complex nesting:~
     let g:python_slow_sync = 1                    " syn sync fromstart
 <
 Otherwise the syntax file syncs at def/class lines with minlines=100.
-The ftplugin does not force 'foldmethod'.
 
 ==============================================================================
 4. TYPE ANNOTATIONS                          *python-syntax-enhanced-types*
@@ -110,7 +111,7 @@ Type highlighting applies only inside annotation regions:
     - Class bases `class Foo(Bar, Generic[T])`
     - PEP 695 type parameters and `type` aliases
 
-Outside those regions, `list(` stays |pythonBuiltin|.
+Outside those regions, `list(` stays `pythonBuiltin`.
 
 Return Type Annotations:~
 >
@@ -154,7 +155,7 @@ TypeVar and Generics:~
 <
 Protocol Classes:~
 >
-    from typing import Protocol
+    from typing import Protocol, Self
 
     class Comparable(Protocol):
         def __lt__(self, other: Self) -> bool: ...
@@ -180,7 +181,7 @@ Type Annotation Groups:~
     pythonReturnType        Return type region
     pythonStmtAnnotation    Statement annotation region
     pythonDocstring         Module / function / class docstrings
-    pythonSelfRef           self / cls / mcs
+    pythonClassVar          self / cls / mcs
 
 Core Groups:~
 
@@ -224,19 +225,31 @@ Syntax breaks in long files:~
     Or use `:syntax sync fromstart`
 
 Type annotations not highlighted:~
-    Ensure `let g:python_highlight_type_annotations = 1` is set BEFORE
-    `syntax on` in your vimrc.
+    Check `:PythonSyntaxInfo`, and that `g:python_highlight_type_annotations`
+    is not 0. In Neovim, Tree-sitter highlighting for Python replaces this
+    plugin.
 
 Conflicts with other plugins:~
-    This plugin force-loads its syntax file on FileType python. Disable any
-    other Python syntax plugins (like vim-python/python-syntax).
+    Disable any other Python syntax plugins (like vim-python/python-syntax).
+    If one wins the runtimepath lookup, this plugin clears it and loads its
+    own file on FileType python, so the other one is loaded for nothing.
 
 Manual syntax resync:~
     If highlighting breaks mid-editing, use `:syntax sync fromstart` or
     create a mapping: `nnoremap <leader>ss :syntax sync fromstart<CR>`
 
 ==============================================================================
-8. CHANGELOG                              *python-syntax-enhanced-changelog*
+8. LIMITATIONS                               *python-syntax-enhanced-limits*
+
+    - Types are recognized by position, not by analysis: any name inside an
+      annotation is colored as a type, and typing names are matched by name.
+    - Statement annotations (`x: int = 1`) are recognized at the start of a
+      line only, not after `;`.
+    - Vim's built-in `python_no_*_highlight` options are not read
+      (`python_highlight_all` is).
+
+==============================================================================
+9. CHANGELOG                              *python-syntax-enhanced-changelog*
 
 1.1.0 (2026-09-26)~
     - Load our syntax/python.vim once per buffer, taking over on FileType
@@ -255,6 +268,11 @@ Manual syntax resync:~
     - Color palette via one function on load + ColorScheme
     - ftplugin no longer forces foldmethod; sync via g:python_slow_sync
     - :PythonSyntaxEnableAll reloads current buffer only
+    - Calls, dicts and lambdas in parameter defaults no longer break the
+      highlighting of later parameters and the return type
+    - `# type: ignore` stays a comment
+    - Not loaded under :syntax off / manual or Neovim Tree-sitter
+    - Removed ftplugin/python.vim, which had no effect
     - Tests (tests/run.sh) run in CI on Vim (Linux/macOS/Windows) and Neovim
 
 1.0.0 (2025-12-18)~
