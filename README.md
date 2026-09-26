@@ -11,7 +11,7 @@ one that colors types only where they are types: parameter and return
 annotations, `x: T` and `self.attr: T`, class bases, and PEP 695 type
 parameters and `type` aliases.
 
-![enhanced-syntax-highlighting-demo](https://github.com/user-attachments/assets/4295c9fb-e658-472e-978c-923091fbc221)
+![Before and after: Vim's built-in Python syntax next to python-syntax-enhanced, colorscheme retrobox](https://github.com/user-attachments/assets/e3f130c2-17f7-454b-95ce-0d3ebe375438)
 
 ## Features
 
@@ -32,8 +32,8 @@ parameters and `type` aliases.
 ## Colors
 
 By default every group is linked to a standard group (`Type`, `Operator`,
-`String`, ...), so your colorscheme decides the colors. The screenshot above
-uses the plugin's own palette, which you can turn on with:
+`String`, ...), so your colorscheme decides the colors, as in the screenshot
+above. The plugin also has its own palette, which you can turn on with:
 
 ```vim
 let g:python_enhanced_colors = 1
