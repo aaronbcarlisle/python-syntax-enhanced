@@ -239,8 +239,15 @@ Manual syntax resync:~
 8. CHANGELOG                              *python-syntax-enhanced-changelog*
 
 1.1.0 (2026-09-26)~
-    - Force-load syntax/python.vim on FileType; remove after/syntax duplicates
+    - Load our syntax/python.vim once per buffer, taking over on FileType
+      only when another python syntax won; remove after/syntax duplicates
     - Type expressions only in annotation regions; CapWords aliases supported
+    - Dotted annotation targets (self.attr: T); `key: value` lines inside
+      multi-line brackets are not annotations
+    - Docstrings after comments on the def/class header; f-string fields
+      keep keyword, call and attribute highlighting
+    - Builtins get their own palette color, distinct from function calls
+    - Fix type highlighting leaking past `obj.attr`, `a @ b` and doctests
     - `|` is union only inside types; operators are one longest-first match
     - Docstrings via nextgroup after header colon (skipnl/skipempty)
     - Comments allowed inside type regions so trailing # notes are not types
@@ -248,7 +255,7 @@ Manual syntax resync:~
     - Color palette via one function on load + ColorScheme
     - ftplugin no longer forces foldmethod; sync via g:python_slow_sync
     - :PythonSyntaxEnableAll reloads current buffer only
-    - Add tests/test_syntax.vim synID assertions
+    - Tests (tests/run.sh) run in CI on Vim (Linux/macOS/Windows) and Neovim
 
 1.0.0 (2025-12-18)~
     - Initial release

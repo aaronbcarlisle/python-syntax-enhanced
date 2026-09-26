@@ -1,5 +1,7 @@
 # Python Syntax Enhanced
 
+[![Tests](https://github.com/aaronbcarlisle/python-syntax-enhanced/actions/workflows/test.yml/badge.svg)](https://github.com/aaronbcarlisle/python-syntax-enhanced/actions/workflows/test.yml)
+
 **IDE-level Python syntax highlighting for Vim with comprehensive type annotation support.**
 
 Vim's built-in Python syntax and existing plugins like `vim-python/python-syntax` don't properly handle modern Python type hints. The `->` return type arrow breaks highlighting, generic types aren't recognized, and typing module constructs are ignored. This plugin fixes all of that.
@@ -42,8 +44,33 @@ Vim's built-in Python syntax and existing plugins like `vim-python/python-syntax
 Plug 'aaronbcarlisle/python-syntax-enhanced'
 ```
 
-### Manual
-Copy to `~/.vim/plugged/python-syntax-enhanced/` or your preferred plugin location.
+### Vundle
+```vim
+Plugin 'aaronbcarlisle/python-syntax-enhanced'
+```
+
+### Vim packages (no plugin manager)
+```sh
+git clone https://github.com/aaronbcarlisle/python-syntax-enhanced.git \
+    ~/.vim/pack/plugins/start/python-syntax-enhanced
+```
+On Windows, use `~/vimfiles/pack/plugins/start/python-syntax-enhanced`.
+Run `:helptags ALL` once afterwards to enable `:help python-syntax-enhanced`.
+
+### Neovim (lazy.nvim)
+```lua
+{ "aaronbcarlisle/python-syntax-enhanced" }
+```
+
+### Compatibility
+
+Tested in CI on Vim 9.2 (Linux, macOS, Windows) and Neovim 0.12, and locally
+with Vim 9.1. It replaces Vim's built-in `syntax/python.vim`, so disable other
+Python syntax plugins (see [Troubleshooting](#troubleshooting)).
+
+In Neovim this is a regular syntax file: it applies when Python is highlighted
+by the syntax engine (Neovim's default), not when Tree-sitter highlighting is
+enabled for Python (e.g. via nvim-treesitter's `highlight` module).
 
 ## Configuration
 
@@ -181,10 +208,10 @@ Visual fixture:
 tests/test_highlighting.py
 ```
 
-Automated synID checks (recommended):
+Automated checks (`synID` assertions plus a syntax-loading test), run in CI on every push and PR:
 ```bash
-vim -Nu NONE -S tests/test_syntax.vim
-vim -Nu NONE -S tests/test_loading.vim
+sh tests/run.sh                  # uses vim
+VIM_BIN=/path/to/vim sh tests/run.sh
 ```
 
 ## License

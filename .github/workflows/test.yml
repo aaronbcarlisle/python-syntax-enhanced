@@ -1,0 +1,38 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Vim (Ubuntu), os: ubuntu-latest, neovim: false }
+          - { name: Vim (macOS), os: macos-latest, neovim: false }
+          - { name: Vim (Windows), os: windows-latest, neovim: false }
+          - { name: Neovim (Ubuntu), os: ubuntu-latest, neovim: true }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: rhysd/action-setup-vim@v1
+        id: vim
+        with:
+          neovim: ${{ matrix.neovim }}
+
+      - name: Show version
+        shell: bash
+        run: '"$VIM_BIN" --version | head -3'
+        env:
+          VIM_BIN: ${{ steps.vim.outputs.executable }}
+
+      - name: Run tests
+        shell: bash
+        run: sh tests/run.sh
+        env:
+          VIM_BIN: ${{ steps.vim.outputs.executable }}
