@@ -9,27 +9,31 @@ Vim's built-in Python syntax and existing plugins like `vim-python/python-syntax
 ## Features
 
 - **Return type arrows** - `->` is properly highlighted (no more broken syntax!)
-- **Full type annotation support** - Parameters, variables, return types
-- **Generic types** - `List[int]`, `Dict[str, Any]`, `Tuple[int, ...]`
-- **Union types** - `X | Y` (Python 3.10+)
-- **typing module** - Optional, Callable, TypeVar, Protocol, Generic, etc.
+- **Type expressions only in annotations** - Parameters, returns, assignments, class bases, PEP 695 type params
+- **Generic types** - `list[int]`, `dict[str, Any]`, `tuple[int, ...]`
+- **Union types** - `X | Y` (Python 3.10+), only inside type regions (bitwise `|` stays an operator)
+- **typing module** - Optional, Callable, Annotated, TypeIs, ReadOnly, NotRequired, Protocol, etc.
+- **User / CapWords types** - `User`, `Comparable`, and other aliases color inside annotations
 - **Type comments** - `# type: int` (PEP 484 legacy style)
-- **Python 3.12+ type syntax** - `def func[T](x: T) -> T:`
+- **Python 3.12+ type syntax** - `def func[T](x: T) -> T:`, `type Point = tuple[int, int]`
 - **Enhanced f-strings** - Including debug specifier `f"{x=}"`
-- **match/case statements** - Python 3.10+ pattern matching
-- **Green docstrings** - Triple-quoted docstrings highlighted in green
-- **Distinct color scheme** - Different colors for types, primitives, classes
+- **match/case** and **except\*** - Python 3.10+ / 3.11+
+- **Green docstrings** - Via nextgroup after the header colon (`skipnl`/`skipempty`, including wrapped signatures and blank lines)
+- **Comments in annotations** - Trailing `# ...` notes stay comments, not fake type names
+- **Distinct color scheme** - Different colors for types, primitives, classes (optional)
 
 ## Color Scheme
 
-| Element | Color |
-|---------|-------|
-| Class names | Cyan |
-| `Optional`, `Callable`, `Generic`, etc. | Orange |
-| `str`, `int`, `bool`, `list`, `dict` | Blue |
-| `->` and `\|` (union) | Magenta |
-| `self`, `cls` | Orange |
-| Docstrings | Green |
+| Element | Color | Highlight group |
+|---------|-------|-----------------|
+| Class names | Cyan | `pythonClass` |
+| `Optional`, `Callable`, `Generic`, etc. | Orange | `pythonTypingType` |
+| `str`, `int`, `bool`, `list`, `dict` | Blue | `pythonPrimitiveType` |
+| CapWords / aliases in annotations | Type link | `pythonTypeName` |
+| `->` and `\|` (union) | Magenta | `pythonReturnArrow`, `pythonTypeUnion` |
+| `self`, `cls` | Orange | `pythonSelfRef` |
+| Builtins in code (`print`, `len`, `str(...)`) | Lavender | `pythonBuiltin` |
+| Docstrings | Green | `pythonDocstring` |
 
 ## Installation
 
@@ -62,11 +66,12 @@ let g:python_highlight_exceptions = 1         " Exceptions (default: 1)
 let g:python_highlight_string_formatting = 1  " String formatting (default: 1)
 let g:python_highlight_doctests = 1           " Doctests (default: 1)
 let g:python_highlight_space_errors = 0       " Space errors (default: 0)
+let g:python_enhanced_colors = 1              " Built-in palette (default: 1; 0 = hi def link only)
 ```
 
 For large files:
 ```vim
-let g:python_slow_sync = 1                    " Better sync for large files
+let g:python_slow_sync = 1                    " syntax sync fromstart
 ```
 
 ## Type Annotations Supported
@@ -87,6 +92,7 @@ def process(data: bytes, count: int = 10) -> None:
 ```python
 users: list[User] = []
 config: Final[dict[str, Any]] = {}
+self._items: list[T] = []   # dotted attribute targets
 ```
 
 ### Generic Types
@@ -131,7 +137,11 @@ type Vector[T] = list[T]
 
 ## Customizing Colors
 
-Override colors in your vimrc (after loading the plugin):
+By default the plugin applies a small palette on syntax load and on `ColorScheme`.
+Set `let g:python_enhanced_colors = 0` to keep only `hi def link` defaults so your
+colorscheme owns the groups.
+
+Override colors in your vimrc (after loading the plugin / colorscheme):
 
 ```vim
 " Example: Make typing types cyan instead of orange
@@ -143,7 +153,7 @@ hi pythonPrimitiveType  ctermfg=220 guifg=#ffd700
 
 ## Commands
 
-- `:PythonSyntaxEnableAll` - Enable all highlighting features
+- `:PythonSyntaxEnableAll` - Enable all highlighting features and reload syntax in the **current** Python buffer
 - `:PythonSyntaxInfo` - Show current configuration
 
 ## Troubleshooting
@@ -161,26 +171,21 @@ nnoremap <leader>ss :syntax sync fromstart<CR>
 ```
 
 **Old syntax file interfering:**
-Check for old Python syntax files in `~/vimfiles/syntax/` or `~/.vim/syntax/` and remove them.
+This plugin force-loads its own `syntax/python.vim` on `FileType python`. Disable other
+Python syntax plugins (like `vim-python/python-syntax`) to avoid conflicts.
 
 ## Testing
 
-A comprehensive test file is included to verify all syntax highlighting features:
-
+Visual fixture:
 ```
 tests/test_highlighting.py
 ```
 
-Open this file in Vim after installing the plugin to see all highlighting in action. It covers:
-- Basic type annotations and return type arrows
-- Generic types and TypeVar usage
-- Protocol classes and structural subtyping
-- ClassVar, Final, and Literal types
-- TypeGuard and ParamSpec
-- Complex nested type annotations
-- Match/case statements (Python 3.10+)
-- F-strings with debug specifier
-- All typing module types
+Automated synID checks (recommended):
+```bash
+vim -Nu NONE -S tests/test_syntax.vim
+vim -Nu NONE -S tests/test_loading.vim
+```
 
 ## License
 
