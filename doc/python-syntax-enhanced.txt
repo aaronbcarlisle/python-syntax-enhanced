@@ -173,7 +173,9 @@ Type Annotation Groups:~
     pythonTypeName          CapWords / aliases / TypeVars in annotations
     pythonTypeDotted        Dotted type paths (collections.abc.Sequence)
     pythonTypeUnion         Union operator `|` (inside type regions only)
-    pythonTypeBracket       Generic brackets `[` `]` and type parentheses
+    pythonTypeBracket       Brackets `[` `]` and parentheses in a type (*)
+    pythonTypeComma         Commas in a type (*)
+    pythonTypeColon         Colon before an annotation (*)
     pythonTypeComment       Type comments `# type: ...`
     pythonTypeNone          `None` inside a type expression
     pythonTypeEllipsis      `...` inside a type expression
@@ -184,6 +186,12 @@ Type Annotation Groups:~
     pythonDocstring         Module / function / class docstrings
     pythonClassVar          self / cls / mcs
 
+    (*) Not highlighted by default, like the rest of Python's punctuation.
+    The same applies to pythonParams (parentheses of a def) and
+    pythonDefColon (the colon ending a def/class header). Link them to
+    color them: >
+        hi link pythonTypeBracket Delimiter
+<
 Core Groups:~
 
     pythonStatement         Keywords (def, class, return, type, etc.)
@@ -275,6 +283,9 @@ Manual syntax resync:~
     - `# type: ignore` stays a comment
     - Not loaded under :syntax off / manual or Neovim Tree-sitter
     - Removed ftplugin/python.vim, which had no effect
+    - Brackets, commas and colons in annotations and def/class headers are
+      no longer linked to Delimiter/Operator, so they look like the same
+      punctuation elsewhere (the groups still exist to link yourself)
     - g:python_enhanced_highlight_all no longer overwrites the individual
       g:python_highlight_* variables
     - Tests (tests/run.sh) run in CI on Vim (Linux/macOS/Windows) and Neovim

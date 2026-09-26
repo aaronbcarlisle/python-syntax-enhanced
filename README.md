@@ -136,6 +136,11 @@ x = []  # type: list[int]
 To change single colors, override the groups in your vimrc after your
 colorscheme (with the palette on, a later `:colorscheme` re-applies it):
 
+Brackets, commas and colons inside annotations are not colored, like the rest
+of Python's punctuation. To color them, link `pythonTypeBracket`,
+`pythonTypeComma`, `pythonTypeColon`, `pythonParams` or `pythonDefColon`, e.g.
+`hi link pythonTypeBracket Delimiter`.
+
 ```vim
 " Example: Make typing types cyan instead of orange
 hi pythonTypingType     ctermfg=44  guifg=#00d7d7
