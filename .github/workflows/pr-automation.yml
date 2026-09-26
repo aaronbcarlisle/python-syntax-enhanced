@@ -8,8 +8,11 @@ on:
 jobs:
   auto-assign-and-label:
     name: Auto-assign and Label PR
-    # Fork PRs get a read-only token, so these writes would fail
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Fork PRs and Dependabot PRs get a read-only token, so these writes would
+    # fail (Dependabot applies its own "dependencies" labels anyway)
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -81,12 +84,10 @@ jobs:
             if (touches(p => p.startsWith('.github/'))) labels.add('ci/cd');
             if (touches(p => p.startsWith('doc/') || p.endsWith('.md'))) labels.add('documentation');
 
-            if (labels.size === 0) {
-              console.log('No labels to add');
-              return;
-            }
-
-            // Create any label that doesn't exist yet
+            // Every label this workflow can apply is owned by it: each run
+            // reconciles them to the current title and paths (so a label from
+            // an earlier push or title is removed), while labels outside this
+            // set (e.g. "wontfix", "good first issue") are never touched.
             const colors = {
               'bug': 'd73a4a',
               'enhancement': 'a2eeef',
@@ -101,7 +102,38 @@ jobs:
               'syntax': '1d76db',
               'plugin': 'd4c5f9',
             };
-            for (const name of labels) {
+
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              per_page: 100,
+            });
+            const currentNames = new Set(current.map(l => l.name));
+
+            const stale = [...currentNames].filter(n => n in colors && !labels.has(n));
+            for (const name of stale) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name,
+                });
+                console.log(`Removed stale label: ${name}`);
+              } catch (e) {
+                console.error(`Failed to remove label '${name}': ${e.message}`);
+              }
+            }
+
+            const missing = [...labels].filter(n => !currentNames.has(n));
+            if (missing.length === 0) {
+              console.log('Labels already up to date');
+              return;
+            }
+
+            // Create any label that doesn't exist in the repo yet
+            for (const name of missing) {
               try {
                 await github.rest.issues.getLabel({
                   owner: context.repo.owner,
@@ -127,12 +159,10 @@ jobs:
               }
             }
 
-            // addLabels only adds, so labels applied by hand are kept
-            const labelArray = [...labels];
-            console.log(`Adding labels: ${labelArray.join(', ')}`);
+            console.log(`Adding labels: ${missing.join(', ')}`);
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              labels: labelArray,
+              labels: missing,
             });
