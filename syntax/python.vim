@@ -643,9 +643,7 @@ hi def link pythonComment           Comment
 hi def link pythonTodo              Todo
 hi def link pythonShebang           Comment
 hi def link pythonEncoding          Comment
-hi def link pythonDefColon          Delimiter
 hi def link pythonDefComment        pythonComment
-hi def link pythonParams            Delimiter
 
 hi def link pythonString            String
 hi def link pythonRawString         String
@@ -694,14 +692,11 @@ endif
 
 if s:type_annotations
   hi def link pythonReturnArrow     Operator
-  hi def link pythonTypeColon       Operator
   hi def link pythonTypingType      Type
   hi def link pythonPrimitiveType   Type
   hi def link pythonTypeName        Type
   hi def link pythonTypeDotted      Type
   hi def link pythonTypeUnion       Operator
-  hi def link pythonTypeBracket     Delimiter
-  hi def link pythonTypeComma       Delimiter
   hi def link pythonTypeNone        Constant
   hi def link pythonTypeEllipsis    Constant
   hi def link pythonTypeString      String

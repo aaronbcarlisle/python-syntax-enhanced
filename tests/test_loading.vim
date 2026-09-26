@@ -65,6 +65,12 @@ call s:Check(s:loads == 1, 'sourced once on FileType, got ' . s:loads)
 " Palette is opt-in: by default groups keep their standard links
 call s:Check(execute('highlight pythonBuiltin') =~# 'links to Function',
       \ 'palette off by default')
+" Punctuation in annotations looks like punctuation elsewhere
+for s:group in ['pythonTypeBracket', 'pythonTypeComma', 'pythonTypeColon',
+      \ 'pythonParams', 'pythonDefColon']
+  call s:Check(execute('highlight ' . s:group) !~# 'links to',
+        \ s:group . ' not linked')
+endfor
 
 " 2. $VIMRUNTIME ahead of plugin: Vim's file wins the runtime! race, so the
 "    plugin must force-load ours -- every time, not only the first time
