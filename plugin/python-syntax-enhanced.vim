@@ -34,8 +34,6 @@ function! PythonSyntaxEnhancedApplyColors() abort
   hi pythonReturnArrow    ctermfg=170 guifg=#d75fd7
   " Union operator - same as arrow
   hi pythonTypeUnion      ctermfg=170 guifg=#d75fd7
-  " self / cls - orange
-  hi pythonSelfRef        ctermfg=209 guifg=#ff875f
   " Builtins (print, len, ...) - lavender, distinct from yellow function calls
   hi pythonBuiltin        ctermfg=139 guifg=#b294bb
   " Docstrings - green
@@ -56,8 +54,10 @@ endfunction
 
 " Normally Vim's FileType/Syntax machinery has already sourced our file by
 " the time this runs; only take over when another python syntax won.
+" 'syntax' is not "python" under :syntax off / :syntax manual, or after
+" Neovim's Tree-sitter highlighter cleared it: leave those buffers alone.
 function! s:LoadSyntax(force) abort
-  if !a:force && s:OursLoaded()
+  if !a:force && (&l:syntax !=# 'python' || s:OursLoaded())
     return
   endif
 

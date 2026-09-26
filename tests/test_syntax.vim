@@ -5,6 +5,7 @@
 
 let s:root = expand('<sfile>:p:h:h')
 let &runtimepath = s:root . ',' . &runtimepath
+syntax on
 
 execute 'source' fnameescape(s:root . '/plugin/python-syntax-enhanced.vim')
 
@@ -148,6 +149,14 @@ call setline(1, [
       \ '    ("a)", 1),  # ] in a comment',
       \ ']',
       \ 'after_list: int = 3',
+      \ 'def defaults(x=foo(1, 2), y: int = 3) -> None:',
+      \ '    pass',
+      \ 'def keyed(items, key=lambda it: it.name, z: str = "") -> None:',
+      \ '    pass',
+      \ 'def mapping(x={"a": 1}, y: int = 0) -> None:',
+      \ '    pass',
+      \ 'n = 1  # type: int',
+      \ 'o = f()  # type: ignore[attr-defined]',
       \ ])
 setlocal filetype=python
 syntax sync fromstart
@@ -258,6 +267,21 @@ call s:AssertGroup(90, s:ColOf(90, 'str'), 'pythonBuiltin', 'dict entry str stay
 call s:AssertGroup(92, s:ColOf(92, 'int'), 'pythonPrimitiveType', 'annotation after dict')
 call s:AssertGroup(94, s:ColOf(94, 'int'), 'pythonPrimitiveType', 'annotation after (a) @ b')
 call s:AssertGroup(98, s:ColOf(98, 'int'), 'pythonPrimitiveType', 'annotation after list w/ ) in str')
+
+" Brackets in parameter defaults do not end the list or start annotations
+call s:AssertGroup(99, s:ColOf(99, 'int'), 'pythonPrimitiveType', 'annotation after f(1, 2) default')
+call s:AssertGroup(99, s:ColOf(99, 'None'), 'pythonTypeNone', 'return type after f(1, 2) default')
+call s:AssertGroup(103, s:ColOf(103, '1'), 'pythonNumber', 'dict default value not a type')
+call s:AssertGroup(103, s:ColOf(103, 'int'), 'pythonPrimitiveType', 'annotation after dict default')
+" lambda defaults: keyword highlighted, body is not an annotation
+call s:AssertGroup(101, s:ColOf(101, 'lambda'), 'pythonStatement', 'lambda in default')
+call s:AssertGroup(101, s:ColOf(101, 'it.name'), 'pythonParamList', 'lambda body not a type')
+call s:AssertGroup(101, s:ColOf(101, 'str'), 'pythonPrimitiveType', 'annotation after lambda default')
+
+" Type comments: the type is colored, the '# type:' prefix and 'ignore' are not
+call s:AssertGroup(105, s:ColOf(105, 'type'), 'pythonComment', '# type: prefix')
+call s:AssertGroup(105, s:ColOf(105, 'int'), 'pythonPrimitiveType', '# type: int')
+call s:AssertGroup(106, s:ColOf(106, 'ignore'), 'pythonComment', '# type: ignore')
 
 " Palette: builtins get their own color, not the Function link
 call s:AssertGroup(4, s:ColOf(4, 'list'), 'pythonBuiltin', 'list() call for palette check')

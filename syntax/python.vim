@@ -207,15 +207,16 @@ if s:type_annotations
 
   " -------------------------------------------------------------------------
   " Parameter lists after def / async def (lookbehind so sync cannot drop them)
-  " Nested () for defaults via self-containment.
+  " Brackets in defaults (x=f(1, 2), x={"k": v}) are pythonBracketBlock, so
+  " their ) , and : cannot end the list or start an annotation.
   " -------------------------------------------------------------------------
   syn region  pythonParamList matchgroup=pythonParams
         \ start="\%(\%(async\s\+\)\=def\s\+\h\w*\%(\s*\[[^[\]]*\]\)\=\s*\)\@<=("
         \ end=")"
-        \ contains=pythonParamList,pythonParamAnnotation,pythonClassVar,pythonSelfRef,
-        \          pythonBuiltin,pythonNumber,pythonString,pythonRawString,pythonFString,
-        \          pythonBytes,pythonOperatorSymbol,pythonComment,pythonEllipsis,
-        \          pythonDecoratorName,@Spell
+        \ contains=pythonBracketBlock,pythonParamAnnotation,pythonParamLambda,
+        \          pythonClassVar,pythonBuiltin,pythonNumber,pythonString,
+        \          pythonRawString,pythonFString,pythonBytes,pythonOperatorSymbol,
+        \          pythonComment,pythonEllipsis,@Spell
         \ nextgroup=pythonReturnType,pythonDefColon
         \ skipwhite skipnl
 
@@ -224,6 +225,11 @@ if s:type_annotations
   syn region  pythonParamAnnotation matchgroup=pythonTypeColon
         \ start=":" end="\ze\%(\s*\%(=\|,\|)\)\)" contained
         \ contains=@pythonTypeExpr
+
+  " key=lambda x: ...  -- the lambda's colon is not an annotation
+  syn region  pythonParamLambda matchgroup=pythonStatement
+        \ start="\<lambda\>" matchgroup=NONE end=":" contained oneline
+        \ contains=pythonBracketBlock,pythonNumber,pythonString,pythonOperatorSymbol
 
   " -------------------------------------------------------------------------
   " Return type: -> through header : (not contained — any -> … : is a return type)
@@ -278,9 +284,10 @@ if s:type_annotations
         \ oneline
 
   " -------------------------------------------------------------------------
-  " Type comments: # type: ...
+  " Type comments: # type: ...  (inside pythonComment; not "# type: ignore")
   " -------------------------------------------------------------------------
-  syn match   pythonTypeComment "#\s*type:\s*.*$" contains=@pythonTypeExpr
+  syn match   pythonTypeComment "\%(#\s*type:\s*\)\@<=\%(ignore\>\)\@!\S.*$"
+        \ contained contains=@pythonTypeExpr
 
 endif
 
@@ -291,28 +298,26 @@ syn cluster pythonTypeInternal contains=
       \ pythonTypingType,pythonPrimitiveType,pythonTypeNone,pythonTypeEllipsis,
       \ pythonTypeUnion,pythonTypeComma,pythonTypeDotted,pythonTypeName,
       \ pythonTypeString,pythonTypeBracket,pythonTypeParen,pythonTypeParamStar,
-      \ pythonParamAnnotation,pythonStmtAnnotation,pythonTypeAliasEq,
-      \ pythonTypeAliasValue,pythonDefColon,pythonDefComment,pythonDocstring
+      \ pythonParamAnnotation,pythonParamLambda,pythonStmtAnnotation,
+      \ pythonTypeAliasEq,pythonTypeAliasValue,pythonTypeComment,
+      \ pythonDefColon,pythonDefComment,pythonDocstring
 
 " ============================================================================
 " Class Variables (self, cls, mcs)
 " ============================================================================
 
 if s:class_vars
-  syn keyword pythonSelfRef     self cls mcs
   syn keyword pythonClassVar    self cls mcs
 endif
 
 " ============================================================================
-" Operators — one match, longest alternative first; no -> ; | is bitwise here
+" Operators — | is bitwise here (union only inside type regions)
 " ============================================================================
 
 if s:operators
-  " Longest alternatives first. Literal ~ must be \~ (bare ~ is last-substitute).
-  " & and | are literal in magic mode; \| separates alternatives.
-  syn match pythonOperatorSymbol
-        \ "\%(<<=\|>>=\|\*\*=\|\/\/=\|:=\|+=\|-=\|\*=\|\/=\|%=\|&=\||=\|\^=\|@=\|==\|!=\|<>\|<=\|>=\|\/\/\|\*\*\|<<\|>>\|+\|-\|\*\|@\|\/\|%\|<\|>\|=\|\~\|&\||\|\^\)"
-        \ display
+  " One character at a time: runs like **= or //= look the same as a single
+  " match, and a character class is much cheaper than a long alternation.
+  syn match pythonOperatorSymbol "[-+*/%@<>=~&|^]\|!=\|:=" display
 endif
 
 " ============================================================================
@@ -353,7 +358,7 @@ syn cluster pythonExpression contains=
       \ pythonAttribute,pythonFunctionCall,
       \ pythonBuiltin,pythonNumber,pythonNone,pythonEllipsis,
       \ pythonString,pythonRawString,pythonFString,pythonBytes,
-      \ pythonOperatorSymbol,pythonOperator,pythonSelfRef,pythonClassVar,
+      \ pythonOperatorSymbol,pythonOperator,pythonClassVar,
       \ pythonComment,pythonDecoratorName,pythonExceptions,
       \ pythonFStringFieldSkip,pythonFStringDebug
 
@@ -683,7 +688,6 @@ endif
 
 if s:class_vars
   hi def link pythonClassVar        Identifier
-  hi def link pythonSelfRef         Identifier
 endif
 
 if s:operators
@@ -709,12 +713,10 @@ if s:type_annotations
   hi def link pythonTypeString      String
   hi def link pythonTypeComment     SpecialComment
   hi def link pythonTypeParamStar   Operator
-  hi def link pythonTypeAnnotation  Type
   hi def link pythonReturnType      Type
   hi def link pythonParamAnnotation Type
   hi def link pythonStmtAnnotation  Type
   hi def link pythonTypeAliasValue  Type
-  hi def link pythonTypeVar         Identifier
 endif
 
 if s:doctests
