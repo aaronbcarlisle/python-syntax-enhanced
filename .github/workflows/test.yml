@@ -18,7 +18,7 @@ jobs:
           - { name: Vim (Windows), os: windows-latest, neovim: false }
           - { name: Neovim (Ubuntu), os: ubuntu-latest, neovim: true }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: rhysd/action-setup-vim@v1
         id: vim
