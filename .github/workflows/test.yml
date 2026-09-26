@@ -9,16 +9,14 @@ jobs:
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    # Neovim support is not claimed yet; report it without failing the run
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: Vim (Ubuntu), os: ubuntu-latest, neovim: false, experimental: false }
-          - { name: Vim (macOS), os: macos-latest, neovim: false, experimental: false }
-          - { name: Vim (Windows), os: windows-latest, neovim: false, experimental: false }
-          - { name: Neovim (Ubuntu), os: ubuntu-latest, neovim: true, experimental: true }
+          - { name: Vim (Ubuntu), os: ubuntu-latest, neovim: false }
+          - { name: Vim (macOS), os: macos-latest, neovim: false }
+          - { name: Vim (Windows), os: windows-latest, neovim: false }
+          - { name: Neovim (Ubuntu), os: ubuntu-latest, neovim: true }
     steps:
       - uses: actions/checkout@v4
 
